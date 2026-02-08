@@ -53,23 +53,32 @@ export const PredictiveInput = React.forwardRef(({
     props.onKeyDown?.(e)
   }
 
+  // Calculate the tail of the suggestion that hasn't been typed yet
+  const ghostTail = (suggestion && props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase())) 
+    ? suggestion.slice(props.value.length) 
+    : "";
+
   return (
     <div className="relative w-full group font-sans">
-      {/* Ghost Text Layer - Stacking Technique */}
+      {/* Ghost Text Layer - Mirror Technique */}
       <div 
         className={cn(
-          "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/30 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-pre", 
+          "absolute inset-0 px-3 py-1 text-base md:text-sm pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-pre", 
           className
         )}
       >
-        {/* If we have a suggestion and it starts with the current value, show the full suggestion.
-            The user's input (black) will cover the matching part.
-            The 'tail' (grey) will remain visible.
-            Note: This requires perfect font matching between Input and this div.
-        */}
-        {suggestion && (props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase()) || !props.value) 
-          ? suggestion 
-          : ""}
+        {/* Case 1: Typing - Show invisible mirror + visible tail */}
+        {props.value && ghostTail ? (
+          <>
+            <span className="text-transparent">{props.value}</span>
+            <span className="text-muted-foreground/30">{ghostTail}</span>
+          </>
+        ) : (
+          /* Case 2: Empty Input - Show full suggestion (if any) */
+          !props.value && suggestion && (
+             <span className="text-muted-foreground/30">{suggestion}</span>
+          )
+        )}
       </div>
       
       {/* Real Input Layer */}
