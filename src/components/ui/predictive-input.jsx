@@ -9,6 +9,7 @@ export const PredictiveInput = React.forwardRef(({
   className,
   ...props
 }, ref) => {
+  console.log('PREDICT_DEBUG_DATA:', suggestions)
   const [suggestion, setSuggestion] = React.useState("")
 
   const updateSuggestion = (val) => {
@@ -58,6 +59,8 @@ export const PredictiveInput = React.forwardRef(({
     ? suggestion.slice(props.value.length) 
     : "";
 
+  console.log('PREDICT_DEBUG_MATCH:', { value: props.value, suggestion, tail: ghostTail })
+
   return (
     <div className="relative w-full group font-sans">
       {/* Ghost Text Layer - Mirror Technique */}
@@ -71,12 +74,12 @@ export const PredictiveInput = React.forwardRef(({
         {props.value && ghostTail ? (
           <>
             <span className="text-transparent">{props.value}</span>
-            <span className="text-muted-foreground/30">{ghostTail}</span>
+            <span className="text-red-500">{ghostTail}</span>
           </>
         ) : (
           /* Case 2: Empty Input - Show full suggestion (if any) */
           !props.value && suggestion && (
-             <span className="text-muted-foreground/30">{suggestion}</span>
+             <span className="text-red-500">{suggestion}</span>
           )
         )}
       </div>
@@ -88,7 +91,7 @@ export const PredictiveInput = React.forwardRef(({
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         // Make background transparent so ghost shows through
-        className={cn("bg-transparent relative z-10", className)}
+        className={cn("bg-transparent relative z-10 opacity-50", className)}
       />
     </div>
   )
