@@ -61,7 +61,7 @@ export const PredictiveInput = React.forwardRef(({
       {props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase()) && (
         <div 
             className={cn(
-            "absolute inset-0 px-3 py-2 text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
+            "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
             className
             )}
         >
@@ -73,7 +73,7 @@ export const PredictiveInput = React.forwardRef(({
       {/* Ghost Text Overlay - Full Suggestion (when empty) */}
       {!props.value && suggestion && (
          <div className={cn(
-          "absolute inset-0 px-3 py-2 text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
+          "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
           className
         )}>
            {suggestion}
