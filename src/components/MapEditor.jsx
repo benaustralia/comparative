@@ -40,14 +40,7 @@ export default function MapEditor({ mapId }) {
   return (
     <div className="h-full flex flex-col bg-white">
       <div className="px-6 py-3 border-b flex items-center justify-between bg-white">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">{mapData.title}</h2>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-xs text-blue-600 font-medium">{mapData.sourceA}</span>
-            <span className="text-xs text-slate-300">vs</span>
-            <span className="text-xs text-orange-600 font-medium">{mapData.sourceB}</span>
-          </div>
-        </div>
+        <h2 className="text-lg font-bold text-slate-900">{mapData.title}</h2>
         <div className="flex items-center gap-2">
           <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
             {modes.map(({ key, Icon }) => (

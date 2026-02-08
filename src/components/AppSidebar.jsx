@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { useFirebaseAuth } from './FirebaseAuthConfig';
 import { createMap, getUserMaps, getLibrary } from '@/lib/db-service';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const sortByDate = (maps) => maps.sort((a, b) => ((b.createdAt?.toDate?.() || new Date(0)) - (a.createdAt?.toDate?.() || new Date(0))));
 
@@ -146,12 +147,12 @@ export default function AppSidebar() {
                     <SidebarMenuButton asChild isActive={map.id === mapId} className="h-auto py-3">
                       <button onClick={() => navigate(`/map/${map.id}`)}>
                         <div className="w-full text-left">
-                          <div className="text-sm font-semibold truncate">{map.title}</div>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[10px] text-blue-600 font-medium truncate">{map.sourceA}</span>
-                            <span className="text-[10px] text-slate-300">vs</span>
-                            <span className="text-[10px] text-orange-600 font-medium truncate">{map.sourceB}</span>
-                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="text-sm font-semibold truncate">{map.title}</div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">{map.title}</TooltipContent>
+                          </Tooltip>
                           <div className="text-[10px] text-slate-400 mt-1">{map.bridges?.length || 0} bridge{(map.bridges?.length || 0) !== 1 ? 's' : ''}</div>
                         </div>
                       </button>
