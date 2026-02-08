@@ -61,12 +61,7 @@ export const discardItem = async (mapId, bridgeId) => {
 };
 
 // Curriculum Library
-import { VCE_LIBRARY_2026 } from './vce-data';
-
 export const getLibrary = async () => {
-  const snapshot = await getDocs(query(collection(db, "curriculum_library")));
-  const library = snapshot.docs.map(d => d.data());
-  if (library.length > 0) return library;
-  await Promise.all(VCE_LIBRARY_2026.map(item => addDoc(collection(db, "curriculum_library"), item)));
-  return VCE_LIBRARY_2026;
+  const snapshot = await getDocs(collection(db, "curriculum_library"));
+  return snapshot.docs.map(d => d.data());
 };

@@ -96,7 +96,7 @@ export default function AppSidebar() {
           </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild><Button className="w-full justify-start" size="sm"><Plus className="mr-2 h-4 w-4" /> New Project</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm" className="w-fit"><Plus className="mr-2 h-4 w-4" /> New Project</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-serif italic text-xl">

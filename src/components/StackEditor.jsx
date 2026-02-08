@@ -97,13 +97,13 @@ function StackCard({ index, control, remove }) {
 
   return (
     <div className={`rounded-xl overflow-hidden transition-all duration-300 ${open ? 'shadow-xl ring-1 ring-slate-900/5 bg-white' : 'shadow-sm bg-white border'}`}>
-      <div onClick={() => setOpen(!open)} className="p-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors bg-slate-50/50 border-b border-slate-100">
+      <button type="button" onClick={() => setOpen(!open)} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors bg-slate-50/50 border-b border-slate-100">
         <div className="flex items-center gap-3">
           <div className={`h-6 w-6 rounded flex items-center justify-center text-xs font-bold ${item.status === 'bridge' ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-500'}`}>{index + 1}</div>
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{item.status === 'bridge' ? 'Complete Bridge' : 'Building'}</span>
         </div>
         <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </div>
+      </button>
       {open && (
         <div className="p-4 space-y-6">
           <SidePanel side="a" index={index} control={control} item={item} />
@@ -161,8 +161,8 @@ export default function StackEditor({ bridges, onBridgesChange, sourceAForm, sou
       <div className="h-full overflow-y-auto p-6">
         <div className="max-w-2xl mx-auto space-y-6">
           {fields.map((item, i) => <StackCard key={item.id} index={i} control={control} remove={remove} />)}
-          <Button onClick={() => append({ id: Date.now(), status: 'cantilever', sideA: { type: sourceAForm || '', tech: '', ctx: '', ev: '', meaning: '' }, sideB: { type: sourceBForm || '', tech: '', ctx: '', ev: '', meaning: '' }, synthesis: '' })} className="w-full py-8 border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl flex flex-col items-center gap-2 transition-all">
-            <Plus size={24} /><span className="font-bold text-sm uppercase">Add Cantilever</span>
+          <Button variant="outline" onClick={() => append({ id: Date.now(), status: 'cantilever', sideA: { type: sourceAForm || '', tech: '', ctx: '', ev: '', meaning: '' }, sideB: { type: sourceBForm || '', tech: '', ctx: '', ev: '', meaning: '' }, synthesis: '' })}>
+            <Plus size={16} className="mr-2" /> Add Cantilever
           </Button>
         </div>
       </div>

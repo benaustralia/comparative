@@ -1,12 +1,13 @@
 import React from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { FORM_LOOKUP } from '@/lib/form-data';
 
 const DelBtn = ({ onClick, cls }) => (
-  <button onClick={onClick} className={`absolute -top-2 -right-2 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm ${cls}`} title="Delete Bridge">
+  <Button variant="ghost" size="icon" onClick={onClick} className={`absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm ${cls}`} title="Delete Bridge">
     <Trash2 size={12} />
-  </button>
+  </Button>
 );
 
 export default function BridgeNode({ data }) {

@@ -1,15 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col relative font-sans">
       <div className="absolute top-0 right-0 p-6">
-        <Link to="/sign-in">
-          <button className="bg-black text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors">
-            Sign In
-          </button>
-        </Link>
+        <Button asChild>
+          <Link to="/sign-in">Sign In</Link>
+        </Button>
       </div>
       
       <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
