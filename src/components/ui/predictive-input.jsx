@@ -41,9 +41,7 @@ export const PredictiveInput = React.forwardRef(({
 
   const handleInputChange = (e) => {
     const value = e.target.value
-    // Propagate change first
     props.onChange?.(e)
-    // Update local suggestion state
     updateSuggestion(value);
   }
 
@@ -56,37 +54,31 @@ export const PredictiveInput = React.forwardRef(({
   }
 
   return (
-    <div className="relative w-full group">
-      {/* Ghost Text Layer - Suffix Only (when typing) */}
-      {props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase()) && (
-        <div 
-            className={cn(
-            "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
-            className
-            )}
-        >
-            <span className="invisible">{props.value}</span>
-            <span>{suggestion.slice(props.value.length)}</span>
-        </div>
-      )}
-      
-      {/* Ghost Text Overlay - Full Suggestion (when empty) */}
-      {!props.value && suggestion && (
-         <div className={cn(
-          "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/40 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-nowrap", 
+    <div className="relative w-full group font-sans">
+      {/* Ghost Text Layer - Stacking Technique */}
+      <div 
+        className={cn(
+          "absolute inset-0 px-3 py-1 text-base md:text-sm text-muted-foreground/30 pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-pre", 
           className
-        )}>
-           {suggestion}
-         </div>
-      )}
-
+        )}
+      >
+        {/* If we have a suggestion and it starts with the current value, show the full suggestion.
+            The user's input (black) will cover the matching part.
+            The 'tail' (grey) will remain visible.
+            Note: This requires perfect font matching between Input and this div.
+        */}
+        {suggestion && (props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase()) || !props.value) 
+          ? suggestion 
+          : ""}
+      </div>
+      
       {/* Real Input Layer */}
       <Input
         {...props}
         ref={ref}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        placeholder={suggestion ? "" : props.placeholder}
+        // Make background transparent so ghost shows through
         className={cn("bg-transparent relative z-10", className)}
       />
     </div>

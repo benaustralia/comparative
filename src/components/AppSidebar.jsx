@@ -9,15 +9,13 @@ import { VCE_LIBRARY_2026 } from '@/lib/vce-data';
 import { PredictiveInput } from '@/components/ui/predictive-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useFirebaseAuth } from './FirebaseAuthConfig';
-import { createMap, getUserMaps } from '@/lib/db-service';
+import { createMap, getUserMaps, getLibrary } from '@/lib/db-service';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 
-const findText = (title) => VCE_LIBRARY_2026.find(t => t.title.toLowerCase() === title.toLowerCase());
 const sortByDate = (maps) => maps.sort((a, b) => ((b.createdAt?.toDate?.() || new Date(0)) - (a.createdAt?.toDate?.() || new Date(0))));
-const titles = VCE_LIBRARY_2026.map(t => t.title);
 
 const Field = ({ control, name, children }) => (
   <FormField control={control} name={name} render={({ field }) => (
@@ -31,6 +29,7 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const { mapId } = useParams();
   const [maps, setMaps] = useState([]);
+  const [library, setLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -39,9 +38,14 @@ export default function AppSidebar() {
     defaultValues: { titleA: "", yearA: "", authorA: "", formA: "", titleB: "", yearB: "", authorB: "", formB: "" },
   });
 
+  // Fetch library on mount/auth
+  useEffect(() => {
+    getLibrary().then(setLibrary);
+  }, []);
+
   const handlePredict = (side, text) => {
     form.setValue(`title${side}`, text);
-    const data = VCE_LIBRARY_2026.find(t => t.title.toLowerCase() === text.toLowerCase());
+    const data = library.find(t => t.title.toLowerCase() === text.toLowerCase());
     if (!data) return;
 
     form.setValue(`year${side}`, data.year);
@@ -49,7 +53,7 @@ export default function AppSidebar() {
     form.setValue(`form${side}`, data.form);
 
     if (side === 'A' && data.suggestedB) {
-      const sug = VCE_LIBRARY_2026.find(t => t.title === data.suggestedB.title);
+      const sug = library.find(t => t.title === data.suggestedB.title);
       if (sug) {
         handlePredict('B', sug.title);
       } else {
@@ -80,6 +84,8 @@ export default function AppSidebar() {
     getUserMaps(uid, user?.primaryEmailAddress?.emailAddress).then(m => setMaps(sortByDate(m)));
     navigate(`/map/${id}`);
   };
+
+  const titles = library.map(t => t.title);
 
   return (
     <Sidebar>
