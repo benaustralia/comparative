@@ -1,0 +1,29 @@
+{
+  "output": {
+    "filePath": "scholarly-canvas-context.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": true
+  },
+  "include": [
+    "**/*.{js,jsx,ts,tsx,json,rules,css}"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "customPatterns": [
+      "dist/**",
+      "node_modules/**",
+      "public/**",
+      "src/assets/**",
+      "**/*.svg",
+      "**/*.png",
+      "**/*.jpg",
+      "bun.lock",
+      "package-lock.json",
+      "yarn.lock",
+      ".git/**",
+      ".firebase/**",
+      ".github/**"
+    ]
+  }
+}

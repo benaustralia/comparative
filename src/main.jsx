@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ClerkProvider } from '@clerk/clerk-react'
+import { SignedIn, SignedOut } from '@clerk/clerk-react'
+import FirebaseAuthProvider from './components/FirebaseAuthConfig'
 import './index.css'
 import App from './App.jsx'
 
@@ -15,7 +17,14 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
       <BrowserRouter>
-        <App />
+        <SignedIn>
+          <FirebaseAuthProvider>
+            <App />
+          </FirebaseAuthProvider>
+        </SignedIn>
+        <SignedOut>
+          <App />
+        </SignedOut>
       </BrowserRouter>
     </ClerkProvider>
   </StrictMode>,

@@ -1,0 +1,1675 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+The content has been processed where empty lines have been removed.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: **/*.{js,jsx,ts,tsx,json,rules,css}
+- Files matching these patterns are excluded: dist/**, node_modules/**, public/**, src/assets/**, **/*.svg, **/*.png, **/*.jpg, bun.lock, package-lock.json, yarn.lock, .git/**, .firebase/**, .github/**
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Empty lines have been removed from all files
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  components/
+    ui/
+      badge.jsx
+      button.jsx
+      card.jsx
+      input.jsx
+      select.jsx
+      textarea.jsx
+    ComparativeApp.jsx
+    Dashboard.jsx
+    FirebaseAuthConfig.jsx
+    LandingPage.jsx
+    SignInPage.jsx
+  lib/
+    db-service.js
+    firebase.js
+    utils.js
+  App.css
+  App.jsx
+  index.css
+  main.jsx
+eslint.config.js
+firebase.json
+firestore.indexes.json
+firestore.rules
+package.json
+postcss.config.js
+repomix.config.json
+tailwind.config.js
+vite.config.js
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/components/Dashboard.jsx">
+import React, { useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, BookOpen, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { createMap, getUserMaps } from '@/lib/db-service';
+import { useFirebaseAuth } from './FirebaseAuthConfig';
+export default function Dashboard() {
+  const { user } = useUser();
+  const { isAuthReady, isAuthLoading, firebaseUid } = useFirebaseAuth();
+  const navigate = useNavigate();
+  const [maps, setMaps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  // New Map Form State
+  const [isCreating, setIsCreating] = useState(false);
+  const [newMapTitle, setNewMapTitle] = useState('');
+  const [sourceA, setSourceA] = useState('');
+  const [sourceB, setSourceB] = useState('');
+  useEffect(() => {
+    if (user && isAuthReady && !isAuthLoading) {
+      loadMaps();
+    }
+  }, [user, isAuthReady, isAuthLoading]);
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-400">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-6 w-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin"></div>
+          <p className="text-sm font-medium">Connecting to secure database...</p>
+        </div>
+      </div>
+    );
+  }
+  const loadMaps = async () => {
+    try {
+      setLoading(true);
+      const email = user.primaryEmailAddress?.emailAddress;
+      // Use Firebase UID if available, fallback to Clerk ID
+      const currentUserId = firebaseUid || user.id;
+      const userMaps = await getUserMaps(currentUserId, email);
+      // Sort by createdAt desc (client-side for now as we didn't add index yet)
+      const sortedMaps = userMaps.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return dateB - dateA;
+      });
+      setMaps(sortedMaps);
+    } catch (error) {
+      console.error("Failed to load maps", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleCreateMap = async (e) => {
+    e.preventDefault();
+    if (!newMapTitle || !sourceA || !sourceB) return;
+    try {
+      // Use Firebase UID if available, fallback to Clerk ID
+      const currentUserId = firebaseUid || user.id;
+      const mapId = await createMap(currentUserId, newMapTitle, sourceA, sourceB);
+      setNewMapTitle('');
+      setSourceA('');
+      setSourceB('');
+      setIsCreating(false);
+      navigate(`/map/${mapId}`);
+    } catch (error) {
+      console.error("Failed to create map", error);
+    }
+  };
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans p-8">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-end border-b pb-6">
+          <div>
+            <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-slate-500 font-medium mt-2">Welcome back, {user?.firstName}.</p>
+          </div>
+          <Button onClick={() => setIsCreating(!isCreating)} className="bg-slate-900 text-white">
+            <Plus className="mr-2 h-4 w-4" /> New Map
+          </Button>
+        </div>
+        {/* Create Map Form */}
+        {isCreating && (
+          <Card className="bg-white border-2 border-slate-200 animate-in fade-in slide-in-from-top-4">
+            <CardHeader>
+              <CardTitle>Create a New Comparative Map</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleCreateMap} className="space-y-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-bold text-slate-700">Map Title</label>
+                  <Input 
+                    placeholder="e.g. Power & Corruption" 
+                    value={newMapTitle} 
+                    onChange={(e) => setNewMapTitle(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <label className="text-sm font-bold text-slate-700">Text A</label>
+                    <Input 
+                      placeholder="e.g. Macbeth" 
+                      value={sourceA} 
+                      onChange={(e) => setSourceA(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-sm font-bold text-slate-700">Text B</label>
+                    <Input 
+                      placeholder="e.g. Animal Farm" 
+                      value={sourceB} 
+                      onChange={(e) => setSourceB(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="ghost" onClick={() => setIsCreating(false)}>Cancel</Button>
+                  <Button type="submit" disabled={!newMapTitle || !sourceA || !sourceB}>Create Map</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+        {/* Maps Grid */}
+        {loading ? (
+          <div className="text-center py-20 text-slate-400">Loading maps...</div>
+        ) : maps.length === 0 ? (
+          <div className="text-center py-20 border-2 border-dashed border-slate-200 rounded-xl">
+            <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-slate-900">No maps yet</h3>
+            <p className="text-slate-500">Create your first comparative analysis map to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {maps.map((map) => (
+              <Card 
+                key={map.id} 
+                className="group cursor-pointer hover:shadow-lg transition-all border-slate-200 hover:border-slate-300"
+                onClick={() => navigate(`/map/${map.id}`)}
+              >
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-start">
+                    <span className="text-xl font-bold truncate pr-4">{map.title}</span>
+                    <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                    <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100">{map.sourceA}</span>
+                    <span className="text-slate-300">vs</span>
+                    <span className="bg-orange-50 text-orange-700 px-2 py-1 rounded border border-orange-100">{map.sourceB}</span>
+                  </div>
+                </CardContent>
+                <CardFooter className="text-xs text-slate-400 border-t pt-4 mt-2">
+                  Last updated: {map.updatedAt?.toDate ? map.updatedAt.toDate().toLocaleDateString() : 'Just now'}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/FirebaseAuthConfig.jsx">
+import { useEffect, useState, createContext, useContext } from "react";
+import { useAuth } from "@clerk/clerk-react";
+import { signInWithCredential, OAuthProvider } from "firebase/auth";
+import { auth } from "../lib/firebase";
+const FirebaseAuthContext = createContext({ isAuthReady: false, isAuthLoading: true, firebaseUid: null });
+export const useFirebaseAuth = () => useContext(FirebaseAuthContext);
+export default function FirebaseAuthProvider({ children }) {
+  const { getToken } = useAuth();
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [firebaseUid, setFirebaseUid] = useState(null);
+  useEffect(() => {
+    const signInWithClerk = async () => {
+      try {
+        const token = await getToken({ template: "firebase" });
+        if (token) {
+          const provider = new OAuthProvider('oidc.clerk');
+          const credential = provider.credential({
+            idToken: token,
+          });
+          const userCredential = await signInWithCredential(auth, credential);
+          setFirebaseUid(userCredential.user.uid);
+          setIsAuthReady(true);
+          setIsAuthLoading(false);
+        }
+      } catch (error) {
+        console.error("DEBUG - Full Firebase Error:", error.code, error.message);
+        console.error("Error signing in to Firebase with Clerk token", error);
+        // Ensure we stop loading state even on error so user isn't stuck forever (optional but good UX)
+        // However, user requested to keep the gate active. If it fails, they probably WANT it stuck or handling error.
+        // I will follow the user's specific request: "Ensure the isAuthReady gate is still active so the dashboard doesn't load until this new login succeeds."
+        // So I will NOT set isAuthLoading(false) on error, effectively blocking the dashboard if auth fails.
+      }
+    };
+    signInWithClerk();
+  }, [getToken]);
+  return (
+    <FirebaseAuthContext.Provider value={{ isAuthReady, isAuthLoading, firebaseUid }}>
+      {children}
+    </FirebaseAuthContext.Provider>
+  );
+}
+</file>
+
+<file path="src/lib/db-service.js">
+import { db } from './firebase';
+import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, serverTimestamp } from 'firebase/firestore';
+export const createMap = async (userId, title, sourceA, sourceB) => {
+  try {
+    const docRef = await addDoc(collection(db, "maps"), {
+      userId,
+      ownerId: userId, // Explicit ownerId as requested
+      title: title || "Untitled Map",
+      sourceA: sourceA || "",
+      sourceB: sourceB || "",
+      sharedWith: [], // Legacy support
+      editors: [], // List of emails with edit access
+      viewers: [], // List of emails with read-only access
+      bridges: [], // For the Comparative App structure
+      content: { nodes: [], edges: [] }, // For potential future graph/canvas structure
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    return docRef.id;
+  } catch (e) {
+    console.error("Error adding document: ", e);
+    throw e;
+  }
+};
+export const getUserMaps = async (userId, email) => {
+  try {
+    const promises = [];
+    // 1. Get maps owned by user (Check new ownerId AND legacy userId)
+    promises.push(getDocs(query(collection(db, "maps"), where("ownerId", "==", userId))));
+    promises.push(getDocs(query(collection(db, "maps"), where("userId", "==", userId))));
+    // 2. Get maps shared with user (if email provided) - Check all lists
+    if (email) {
+      promises.push(getDocs(query(collection(db, "maps"), where("sharedWith", "array-contains", email))));
+      promises.push(getDocs(query(collection(db, "maps"), where("editors", "array-contains", email))));
+      promises.push(getDocs(query(collection(db, "maps"), where("viewers", "array-contains", email))));
+    }
+    const snapshots = await Promise.all(promises);
+    const allMaps = snapshots.flatMap(snap => snap.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Ensure arrays exist to prevent crashes
+        sharedWith: data.sharedWith || [],
+        editors: data.editors || [],
+        viewers: data.viewers || []
+      };
+    }));
+    // 3. Deduplicate
+    const uniqueMaps = Array.from(new Map(allMaps.map(item => [item.id, item])).values());
+    return uniqueMaps;
+  } catch (e) {
+    console.error("Error getting maps: ", e);
+    throw e;
+  }
+};
+export const shareMap = async (mapId, email, role = 'editor') => {
+  try {
+    const docRef = doc(db, "maps", mapId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Clean user from all lists to allow role switching
+      // Also clean from legacy sharedWith to avoid confusion
+      const editors = (data.editors || []).filter(e => e !== email);
+      const viewers = (data.viewers || []).filter(e => e !== email);
+      const sharedWith = (data.sharedWith || []).filter(e => e !== email);
+      const updates = {
+        editors,
+        viewers,
+        sharedWith,
+        updatedAt: serverTimestamp()
+      };
+      if (role === 'editor') {
+        updates.editors = [...editors, email];
+      } else {
+        updates.viewers = [...viewers, email];
+      }
+      await updateDoc(docRef, updates);
+    }
+  } catch (e) {
+    console.error("Error sharing map: ", e);
+    throw e;
+  }
+};
+export const getMap = async (mapId, currentUserId) => {
+  try {
+    const docRef = doc(db, "maps", mapId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Auto-Migration: Fix missing ownerId
+      if (!data.ownerId) {
+        // Use legacy userId if available, otherwise use current user ID if provided
+        const newOwnerId = data.userId || currentUserId;
+        if (newOwnerId) {
+            try {
+                await updateDoc(docRef, { 
+                    ownerId: newOwnerId,
+                    updatedAt: serverTimestamp() 
+                });
+                data.ownerId = newOwnerId;
+            } catch (err) {
+                console.error("Migration failed:", err);
+            }
+        }
+      }
+      return { 
+        id: docSnap.id, 
+        ...data,
+        // Ensure arrays exist
+        sharedWith: data.sharedWith || [],
+        editors: data.editors || [],
+        viewers: data.viewers || []
+      };
+    } else {
+      console.log("No such document!");
+      return null;
+    }
+  } catch (e) {
+    console.error("Error getting map: ", e);
+    throw e;
+  }
+};
+export const updateMapBridges = async (mapId, bridges) => {
+  try {
+    const docRef = doc(db, "maps", mapId);
+    await updateDoc(docRef, {
+      bridges,
+      updatedAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error("Error updating map bridges: ", e);
+    throw e;
+  }
+};
+</file>
+
+<file path="firestore.indexes.json">
+{
+  // Example (Standard Edition):
+  //
+  // "indexes": [
+  //   {
+  //     "collectionGroup": "widgets",
+  //     "queryScope": "COLLECTION",
+  //     "fields": [
+  //       { "fieldPath": "foo", "arrayConfig": "CONTAINS" },
+  //       { "fieldPath": "bar", "mode": "DESCENDING" }
+  //     ]
+  //   },
+  //
+  //  "fieldOverrides": [
+  //    {
+  //      "collectionGroup": "widgets",
+  //      "fieldPath": "baz",
+  //      "indexes": [
+  //        { "order": "ASCENDING", "queryScope": "COLLECTION" }
+  //      ]
+  //    },
+  //   ]
+  // ]
+  //
+  // Example (Enterprise Edition):
+  //
+  // "indexes": [
+  //   {
+  //     "collectionGroup": "reviews",
+  //     "queryScope": "COLLECTION_GROUP",
+  //     "apiScope": "MONGODB_COMPATIBLE_API",
+  //     "density": "DENSE",
+  //     "multikey": false,
+  //     "fields": [
+  //       { "fieldPath": "baz", "mode": "ASCENDING" }
+  //     ]
+  //   },
+  //   {
+  //     "collectionGroup": "items",
+  //     "queryScope": "COLLECTION_GROUP",
+  //     "apiScope": "MONGODB_COMPATIBLE_API",
+  //     "density": "SPARSE_ANY",
+  //     "multikey": true,
+  //     "fields": [
+  //       { "fieldPath": "baz", "mode": "ASCENDING" }
+  //     ]
+  //   },
+  // ]
+  "indexes": [],
+  "fieldOverrides": []
+}
+</file>
+
+<file path="firestore.rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /maps/{mapId} {
+      // Helper function to check if email is in a list field
+      function isUserInList(fieldName) {
+        return resource.data.get(fieldName, []).hasAny([request.auth.token.email]);
+      }
+
+      // Allow create if authenticated
+      allow create: if request.auth != null;
+      
+      // TEMPORARY: Allow read/list for all authenticated users to fix migration issues
+      allow read: if request.auth != null;
+      
+      // Allow update if owner, legacy creator, or in write-access lists (sharedWith, editors)
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.ownerId || 
+        request.auth.uid == resource.data.userId || 
+        isUserInList('sharedWith') ||
+        isUserInList('editors')
+      );
+      
+      // Allow delete only if owner/creator
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.ownerId || 
+        request.auth.uid == resource.data.userId
+      );
+    }
+  }
+}
+</file>
+
+<file path="repomix.config.json">
+{
+  "output": {
+    "filePath": "scholarly-canvas-context.xml",
+    "style": "xml",
+    "removeComments": false,
+    "removeEmptyLines": true
+  },
+  "include": [
+    "**/*.{js,jsx,ts,tsx,json,rules,css}"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "customPatterns": [
+      "dist/**",
+      "node_modules/**",
+      "public/**",
+      "src/assets/**",
+      "**/*.svg",
+      "**/*.png",
+      "**/*.jpg",
+      "bun.lock",
+      "package-lock.json",
+      "yarn.lock",
+      ".git/**",
+      ".firebase/**",
+      ".github/**"
+    ]
+  }
+}
+</file>
+
+<file path="src/components/ui/badge.jsx">
+import * as React from "react"
+import { cva } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+function Badge({ className, variant, ...props }) {
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  )
+}
+export { Badge, badgeVariants }
+</file>
+
+<file path="src/components/ui/button.jsx">
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-slate-900 text-slate-50 hover:bg-slate-900/90",
+        destructive: "bg-red-500 text-slate-50 hover:bg-red-500/90",
+        outline: "border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900",
+        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-100/80",
+        ghost: "hover:bg-slate-100 hover:text-slate-900",
+        link: "text-slate-900 underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+const Button = React.forwardRef(({ className, variant, size, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : "button"
+  return (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Button.displayName = "Button"
+export { Button, buttonVariants }
+</file>
+
+<file path="src/components/ui/card.jsx">
+import * as React from "react"
+import { cn } from "@/lib/utils"
+const Card = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+const CardContent = React.forwardRef(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+</file>
+
+<file path="src/components/ui/input.jsx">
+import * as React from "react"
+import { cn } from "@/lib/utils"
+const Input = React.forwardRef(({ className, type, ...props }, ref) => {
+  return (
+    <input
+      type={type}
+      className={cn(
+        "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Input.displayName = "Input"
+export { Input }
+</file>
+
+<file path="src/components/ui/select.jsx">
+import * as React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import { Check, ChevronDown, ChevronUp } from "lucide-react"
+import { cn } from "@/lib/utils"
+const Select = SelectPrimitive.Root
+const SelectGroup = SelectPrimitive.Group
+const SelectValue = SelectPrimitive.Value
+const SelectTrigger = React.forwardRef(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+))
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+const SelectScrollUpButton = React.forwardRef(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronUp className="h-4 w-4" />
+  </SelectPrimitive.ScrollUpButton>
+))
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
+const SelectScrollDownButton = React.forwardRef(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4" />
+  </SelectPrimitive.ScrollDownButton>
+))
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName
+const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-slate-200 bg-white text-slate-950 shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+))
+SelectContent.displayName = SelectPrimitive.Content.displayName
+const SelectLabel = React.forwardRef(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
+const SelectItem = React.forwardRef(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-slate-100 focus:text-slate-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+))
+SelectItem.displayName = SelectPrimitive.Item.displayName
+const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-slate-100", className)}
+    {...props}
+  />
+))
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+}
+</file>
+
+<file path="src/components/ui/textarea.jsx">
+import * as React from "react"
+import { cn } from "@/lib/utils"
+const Textarea = React.forwardRef(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        "flex min-h-[80px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
+export { Textarea }
+</file>
+
+<file path="src/components/ComparativeApp.jsx">
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+import { useFirebaseAuth } from './FirebaseAuthConfig';
+import { Plus, Trash2, Map, Edit3, ChevronDown, GitMerge, ArrowLeft, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from '@/components/ui/select';
+import { getMap, updateMapBridges, shareMap } from '@/lib/db-service';
+const FORMS = {
+  prose: {
+    label: "Prose Fiction",
+    options: [
+      { id: 'novel', label: 'Novel', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+      { id: 'novella', label: 'Novella', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+      { id: 'anthology', label: 'Short Story Collection', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' }
+    ]
+  },
+  screen: {
+    label: "Film & Screen",
+    options: [
+      { id: 'film', label: 'Feature Film', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+      { id: 'docu', label: 'Documentary', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+      { id: 'short_film', label: 'Short Film', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+      { id: 'series', label: 'Miniseries / TV', color: 'bg-red-50 text-red-700 border-red-200' }
+    ]
+  },
+  stage: {
+    label: "Theatre",
+    options: [
+      { id: 'play', label: 'Play Script', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      { id: 'musical', label: 'Musical', color: 'bg-teal-50 text-teal-700 border-teal-200' }
+    ]
+  },
+  visual: {
+    label: "Visual Text",
+    options: [
+      { id: 'gn', label: 'Graphic Novel', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+      { id: 'pic_book', label: 'Picture Book', color: 'bg-pink-50 text-pink-700 border-pink-200' }
+    ]
+  },
+  reality: {
+    label: "Non-Fiction",
+    options: [
+      { id: 'memoir', label: 'Memoir', color: 'bg-slate-50 text-slate-700 border-slate-200' },
+      { id: 'bio', label: 'Biography', color: 'bg-stone-50 text-stone-700 border-stone-200' },
+      { id: 'essay', label: 'Essay Collection', color: 'bg-zinc-50 text-zinc-700 border-zinc-200' }
+    ]
+  }
+};
+const FORM_LOOKUP = Object.values(FORMS).flatMap(g => g.options).reduce((acc, opt) => ({...acc, [opt.id]: opt}), {});
+const TECHS = {
+  novel: ['First Person', 'Third Person', 'Metaphor', 'Simile', 'Symbolism', 'Motif', 'Imagery', 'Tone'],
+  novella: ['First Person', 'Third Person', 'Metaphor', 'Symbolism', 'Compressed Timeline'],
+  anthology: ['Thematic Echo', 'Motif Repetition', 'Linear', 'Non-linear', 'Circular Narrative', 'Frame Story'],
+  film: ['Close-up', 'Long Shot', 'Dutch Angle', 'Tracking Shot', 'Diegetic Sound', 'Non-diegetic Score', 'Lighting', 'Montage'],
+  docu: ['Talking Head', 'Archival Footage', 'Voice-over', 'Statistics', 'Expert Interview', 'Reconstruction'],
+  short_film: ['Minimalism', 'Close-up', 'Ambient Sound', 'Single Location', 'Twist Ending'],
+  series: ['Episode Arc', 'Season Arc', 'Cliffhanger', 'Cold Open', 'Flashback', 'Parallel Plot'],
+  play: ['Soliloquy', 'Monologue', 'Aside', 'Stage Directions', 'Lighting Cues', 'Prop Usage', 'Silence'],
+  musical: ['Leitmotif', 'Diegetic Song', 'Ensemble Number', 'Reprise', 'Underscoring'],
+  gn: ['Gutter', 'Splash Page', 'Bleed', 'Emanata', 'Graphic Weight', 'Salience', 'Vectors', 'Speech Balloon'],
+  pic_book: ['Visual-Textual Gap', 'Gutter Space', 'Peritext', 'Page Turn', 'Wordless Spread'],
+  memoir: ['Anecdote', 'Reflective Voice', 'Emotive Language', 'Selective Memory', 'Fragmentation'],
+  bio: ['Chronological Structure', 'Expert Opinion', 'Primary Source', 'Objectivity', 'Historical Context'],
+  essay: ['Rhetorical Question', 'Thesis Statement', 'Anecdote', 'Expert Opinion', 'Statistics', 'Emotive Language']
+};
+const LabelBadge = ({ color, label }) => (
+  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${color}`}>{label}</div>
+);
+function StackCard({ item, index, onUpdate, onDelete, readOnly }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className={`rounded-xl overflow-hidden transition-all duration-300 ${open ? 'shadow-xl ring-1 ring-slate-900/5 bg-white' : 'shadow-sm bg-white border'}`}>
+      <div onClick={() => setOpen(!open)} className="p-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 transition-colors bg-slate-50/50 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className={`h-6 w-6 rounded flex items-center justify-center text-xs font-bold ${item.status === 'bridge' ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-500'}`}>{index + 1}</div>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{item.status === 'bridge' ? 'Complete Bridge' : 'Building'}</span>
+        </div>
+        <ChevronDown size={16} className={`text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </div>
+      {open && (
+        <div className="p-4 space-y-6">
+          <div className="space-y-3 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-200 rounded-full" />
+            <div className="pl-4 space-y-2">
+              <LabelBadge color="text-blue-600" label="Source A" />
+              <div className="grid grid-cols-2 gap-2">
+                <Select disabled={readOnly} value={item.sideA.type} onValueChange={v => onUpdate(item.id, 'sideA', 'type', v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Form" /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {Object.entries(FORMS).map(([key, group], index) => (
+                      <React.Fragment key={key}>
+                        {index > 0 && <SelectSeparator />}
+                        <SelectGroup>
+                          <SelectLabel className="text-[10px] uppercase font-bold text-slate-400 pl-2 py-1">{group.label}</SelectLabel>
+                          {group.options.map(opt => (
+                            <SelectItem key={opt.id} value={opt.id} className="text-xs pl-4">{opt.label}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </React.Fragment>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select disabled={readOnly} value={item.sideA.tech} onValueChange={v => onUpdate(item.id, 'sideA', 'tech', v)}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Technique" /></SelectTrigger>
+                  <SelectContent>
+                    {!item.sideA.type ? (
+                      <SelectItem value="hint" disabled className="text-slate-400 italic">
+                        Select a Form first...
+                      </SelectItem>
+                    ) : (
+                      (TECHS[item.sideA.type] || []).map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input disabled={readOnly} className="h-8 text-xs" placeholder="Context (e.g. Chapter 1)" value={item.sideA.ctx} onChange={e => onUpdate(item.id, 'sideA', 'ctx', e.target.value)} />
+              <Textarea disabled={readOnly} className="min-h-[50px] text-xs resize-none bg-slate-50" placeholder="Evidence / Quote..." value={item.sideA.ev} onChange={e => onUpdate(item.id, 'sideA', 'ev', e.target.value)} />
+              <div className="pt-1">
+                <Input disabled={readOnly} className="h-8 text-xs font-medium text-blue-900 bg-blue-50 border-blue-100 placeholder:text-blue-300" placeholder="Meaning A (The Effect?)" value={item.sideA.meaning} onChange={e => onUpdate(item.id, 'sideA', 'meaning', e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-slate-300 py-1">
+             <div className="h-px bg-slate-200 flex-1"></div>
+             <GitMerge size={16} />
+             <div className="h-px bg-slate-200 flex-1"></div>
+          </div>
+          <div className="space-y-3 relative">
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-200 rounded-full" />
+            <div className="pl-4 space-y-2">
+              <LabelBadge color="text-orange-600" label="Source B" />
+              {!item.sideB.type ? (
+                <Select disabled={readOnly} value={item.sideB.type} onValueChange={v => onUpdate(item.id, 'sideB', 'type', v)}>
+                  <SelectTrigger className="h-10 text-xs border-dashed text-slate-400 hover:text-slate-600 hover:border-slate-300">
+                    <SelectValue placeholder="+ Connect Source B" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {Object.entries(FORMS).map(([key, group], index) => (
+                      <React.Fragment key={key}>
+                        {index > 0 && <SelectSeparator />}
+                        <SelectGroup>
+                          <SelectLabel className="text-[10px] uppercase font-bold text-slate-400 pl-2 py-1">{group.label}</SelectLabel>
+                          {group.options.map(opt => (
+                            <SelectItem key={opt.id} value={opt.id} className="text-xs pl-4">{opt.label}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </React.Fragment>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select disabled={readOnly} value={item.sideB.type} onValueChange={v => onUpdate(item.id, 'sideB', 'type', v)}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Form" /></SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {Object.entries(FORMS).map(([key, group], index) => (
+                          <React.Fragment key={key}>
+                            {index > 0 && <SelectSeparator />}
+                            <SelectGroup>
+                              <SelectLabel className="text-[10px] uppercase font-bold text-slate-400 pl-2 py-1">{group.label}</SelectLabel>
+                              {group.options.map(opt => (
+                                <SelectItem key={opt.id} value={opt.id} className="text-xs pl-4">{opt.label}</SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </React.Fragment>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select disabled={readOnly} value={item.sideB.tech} onValueChange={v => onUpdate(item.id, 'sideB', 'tech', v)}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Technique" /></SelectTrigger>
+                      <SelectContent>
+                        {!item.sideB.type ? (
+                          <SelectItem value="hint" disabled className="text-slate-400 italic">
+                            Select a Form first...
+                          </SelectItem>
+                        ) : (
+                          (TECHS[item.sideB.type] || []).map(t => (
+                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Input disabled={readOnly} className="h-8 text-xs" placeholder="Context (e.g. Scene 1)" value={item.sideB.ctx} onChange={e => onUpdate(item.id, 'sideB', 'ctx', e.target.value)} />
+                  <Textarea disabled={readOnly} className="min-h-[50px] text-xs resize-none bg-slate-50" placeholder="Evidence / Visuals..." value={item.sideB.ev} onChange={e => onUpdate(item.id, 'sideB', 'ev', e.target.value)} />
+                  <div className="pt-1">
+                    <Input disabled={readOnly} className="h-8 text-xs font-medium text-orange-900 bg-orange-50 border-orange-100 placeholder:text-orange-300" placeholder="Meaning B (The Effect?)" value={item.sideB.meaning} onChange={e => onUpdate(item.id, 'sideB', 'meaning', e.target.value)} />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          {item.sideB.type && (
+            <div className="pt-2 animate-in fade-in">
+              <LabelBadge color="text-purple-600" label="The Synthesis (Shared Meaning)" />
+              <Textarea disabled={readOnly} className="mt-1 min-h-[60px] text-xs resize-none !bg-slate-900 !text-white !border-slate-700 placeholder:!text-slate-400" placeholder="How does the meaning shift or evolve between texts?" value={item.synthesis} onChange={e => onUpdate(item.id, 'root', 'synthesis', e.target.value)} />
+            </div>
+          )}
+          {!readOnly && (
+            <div className="flex justify-end pt-2">
+              <Button variant="ghost" size="sm" className="text-red-400 h-8 text-xs hover:text-red-600" onClick={() => onDelete(item.id)}>
+                <Trash2 size={14} className="mr-1"/> Remove Bridge
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+function BridgeVisualizer({ item, index }) {
+  const metaA = FORM_LOOKUP[item.sideA.type];
+  const metaB = FORM_LOOKUP[item.sideB.type];
+  return (
+    <div className="relative">
+      <div className="absolute -left-3 top-0 bottom-0 border-l-2 border-slate-100"></div>
+      <div className="absolute -left-[17px] top-0 h-6 w-6 rounded-full bg-slate-100 text-[10px] font-bold text-slate-400 flex items-center justify-center border-4 border-white">{index + 1}</div>
+      <div className="space-y-1">
+        <div className="flex items-stretch gap-1">
+          <div className={`flex-1 rounded-l-lg p-3 border-y border-l ${metaA ? metaA.color : 'bg-slate-100 text-slate-400'}`}>
+            <div className="text-[10px] font-bold uppercase opacity-70 mb-1">{metaA ? metaA.label : 'Source A'}</div>
+            <div className="font-bold text-sm mb-2">{item.sideA.tech || "Technique"}</div>
+            <div className="text-xs opacity-90 italic mb-2">"{item.sideA.ev || '...'}"</div>
+            {item.sideA.meaning && (
+              <div className="text-[10px] font-medium p-1.5 bg-white/50 rounded leading-tight">{item.sideA.meaning}</div>
+            )}
+          </div>
+          <div className="w-8 flex items-center justify-center bg-slate-800 rounded mx-[-4px] z-10 shadow-lg">
+             <GitMerge size={14} className="text-white" />
+          </div>
+          {item.sideB.type ? (
+            <div className={`flex-1 rounded-r-lg p-3 border-y border-r text-right ${metaB ? metaB.color : 'bg-slate-100 text-slate-400'}`}>
+              <div className="text-[10px] font-bold uppercase opacity-70 mb-1">{metaB ? metaB.label : 'Source B'}</div>
+              <div className="font-bold text-sm mb-2">{item.sideB.tech || "Technique"}</div>
+              <div className="text-xs opacity-90 italic mb-2">"{item.sideB.ev || '...'}"</div>
+              {item.sideB.meaning && (
+                <div className="text-[10px] font-medium p-1.5 bg-white/50 rounded leading-tight text-right">{item.sideB.meaning}</div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 rounded-r-lg border-2 border-dashed border-slate-200 flex items-center justify-center p-4">
+               <span className="text-[10px] uppercase font-bold text-slate-300">Unfinished</span>
+            </div>
+          )}
+        </div>
+        {item.synthesis && (
+          <div className="mx-4 bg-slate-900 text-white p-3 rounded-b-lg rounded-t-sm text-xs leading-relaxed shadow-lg relative -mt-1 z-0">
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-1 bg-slate-800"></div>
+             <span className="font-bold text-slate-500 uppercase text-[10px] block mb-1">Synthesis</span>
+             {item.synthesis}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+export default function ComparativeApp() {
+  const { mapId } = useParams();
+  const { user } = useUser();
+  const { firebaseUid } = useFirebaseAuth();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState('stack');
+  const [items, setItems] = useState([]);
+  const [mapData, setMapData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  // Sharing State
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareEmail, setShareEmail] = useState('');
+  const [shareRole, setShareRole] = useState('viewer');
+  // Permission State
+  const [permissionStatus, setPermissionStatus] = useState('verifying');
+  const [canEdit, setCanEdit] = useState(false);
+  // Reactive Permission Logic
+  useEffect(() => {
+    // If we have mapData but no user yet, we are still verifying unless map is public
+    if (!mapData) {
+      setPermissionStatus('verifying');
+      return;
+    }
+    // If logged out, maybe read-only? For now assuming locked if private
+    if (!user) {
+        setCanEdit(false);
+        setPermissionStatus('unauthorized');
+        return;
+    }
+    const checkPermissions = () => {
+      // Admin Override
+      if (user.id === 'FgH8dLkSiHbYwF78PkCHmZvP3M12') return true;
+      // Owner Override - Check against Firebase UID if available, else fallback (though user wants strict mismatch fix)
+      if (firebaseUid && firebaseUid === mapData.ownerId) return true;
+      // Fallback to Clerk ID just in case migration hasn't happened or strictly legacy
+      if (user.id === mapData.ownerId) return true;
+      // List Checks
+      const email = user.primaryEmailAddress?.emailAddress;
+      if (mapData.editors?.includes(email)) return true;
+      if (mapData.sharedWith?.includes(email)) return true; // Legacy
+      return false;
+    };
+    const isAuthorized = checkPermissions();
+    setCanEdit(isAuthorized);
+    setPermissionStatus(isAuthorized ? 'authorized' : 'unauthorized');
+  }, [user, mapData, firebaseUid]);
+  const isReadOnly = !canEdit;
+  // Ref to track if initial load is done to prevent overwriting with empty array
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (mapId) {
+      loadMapData();
+    }
+  }, [mapId]);
+  // Auto-save effect
+  useEffect(() => {
+    if (!initialLoadDone.current || !mapId || isReadOnly) return;
+    const saveTimer = setTimeout(async () => {
+      setSaving(true);
+      try {
+        await updateMapBridges(mapId, items);
+      } catch (error) {
+        console.error("Auto-save failed", error);
+      } finally {
+        setSaving(false);
+      }
+    }, 1000); // Debounce save by 1 second
+    return () => clearTimeout(saveTimer);
+  }, [items, mapId]);
+  const loadMapData = async () => {
+    try {
+      setLoading(true);
+      // Use Firebase UID if available, else fallback to Clerk ID
+      const currentUserId = firebaseUid || user?.id;
+      const data = await getMap(mapId, currentUserId);
+      if (data) {
+        setMapData(data);
+        if (data.bridges && data.bridges.length > 0) {
+          setItems(data.bridges);
+        } else {
+          // Initialize with one empty item if no bridges exist
+           setItems([{ 
+            id: 1, 
+            status: 'cantilever', 
+            sideA: { type: '', tech: '', ctx: '', ev: '', meaning: '' }, 
+            sideB: { type: '', tech: '', ctx: '', ev: '', meaning: '' },
+            synthesis: ''
+          }]);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load map", error);
+    } finally {
+      setLoading(false);
+      initialLoadDone.current = true;
+    }
+  };
+  const addItem = () => {
+    setItems([...items, { 
+      id: Date.now(), 
+      status: 'cantilever', 
+      sideA: { type: 'novel', tech: '', ctx: '', ev: '', meaning: '' }, 
+      sideB: { type: '', tech: '', ctx: '', ev: '', meaning: '' },
+      synthesis: ''
+    }]);
+  };
+  const update = (id, side, field, val) => {
+    setItems(items.map(item => {
+      if (item.id !== id) return item;
+      if (side === 'root') return { ...item, [field]: val };
+      const newItem = { ...item, [side]: { ...item[side], [field]: val } };
+      newItem.status = (newItem.sideA.type && newItem.sideB.type) ? 'bridge' : 'cantilever';
+      return newItem;
+    }));
+  };
+  const deleteItem = (id) => setItems(items.filter(i => i.id !== id));
+  const handleShare = async () => {
+    if (!shareEmail) return;
+    try {
+      await shareMap(mapId, shareEmail, shareRole);
+      setShareEmail('');
+      setShowShareModal(false);
+      // Optional: Add toast notification here
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-400">Loading map...</div>;
+  }
+  if (!mapData) {
+    return <div className="min-h-screen flex items-center justify-center text-slate-400">Map not found.</div>;
+  }
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans max-w-md mx-auto border-x bg-white flex flex-col">
+      <div className="pt-8 pb-4 px-6 bg-white border-b sticky top-0 z-10 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="h-8 w-8 -ml-2 text-slate-400 hover:text-slate-900">
+            <ArrowLeft size={20} />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight truncate">{mapData.title}</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              {mapData.sourceA} <span className="text-slate-300">vs</span> {mapData.sourceB}
+              {saving && <span className="text-blue-500 animate-pulse ml-2">Saving...</span>}
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          {!isReadOnly && (
+            <Button variant="outline" size="sm" onClick={() => setShowShareModal(true)} className="h-8 text-xs">
+               <Users size={14} className="mr-2" /> Share
+            </Button>
+          )}
+          <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
+            <Button size="icon" variant="ghost" className={`h-8 w-8 ${mode === 'stack' ? 'bg-white shadow-sm' : 'text-slate-400'}`} onClick={() => setMode('stack')}><Edit3 size={16}/></Button>
+            <Button size="icon" variant="ghost" className={`h-8 w-8 ${mode === 'map' ? 'bg-white shadow-sm' : 'text-slate-400'}`} onClick={() => setMode('map')}><Map size={16}/></Button>
+          </div>
+        </div>
+      </div>
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-4 text-slate-900">Share Map</h3>
+            <p className="text-sm text-slate-500 mb-4">Add a user by their Clerk email address.</p>
+            <div className="space-y-4 mb-4">
+              <Input 
+                placeholder="Enter email address" 
+                value={shareEmail} 
+                onChange={e => setShareEmail(e.target.value)}
+              />
+              <Select value={shareRole} onValueChange={setShareRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">Viewer (Read Only)</SelectItem>
+                  <SelectItem value="editor">Editor (Can Edit)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowShareModal(false)}>Cancel</Button>
+              <Button onClick={handleShare}>Share</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-32">
+        {permissionStatus === 'verifying' && (
+          <div className="p-4 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 flex items-center justify-center animate-pulse">
+            <span className="font-bold text-sm">Verifying Permissions...</span>
+          </div>
+        )}
+        {mode === 'stack' && (
+          <div className="space-y-6">
+            {items.map((item, index) => (
+              <StackCard key={item.id} item={item} index={index} onUpdate={update} onDelete={deleteItem} readOnly={isReadOnly} />
+            ))}
+            {!isReadOnly && (
+              <Button onClick={addItem} className="w-full py-8 border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl flex flex-col items-center gap-2 transition-all">
+                <Plus size={24} />
+                <span className="font-bold text-sm uppercase">Add Cantilever</span>
+              </Button>
+            )}
+          </div>
+        )}
+        {mode === 'map' && (
+          <div className="space-y-12 py-6 px-2">
+            {items.map((item, index) => (
+              <BridgeVisualizer key={item.id} item={item} index={index} />
+            ))}
+            {items.length === 0 && <div className="text-center text-slate-400 italic">No bridges built yet.</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/LandingPage.jsx">
+import React from 'react';
+import { Link } from 'react-router-dom';
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen bg-white flex flex-col relative font-sans">
+      <div className="absolute top-0 right-0 p-6">
+        <Link to="/sign-in">
+          <button className="bg-black text-white px-6 py-2 rounded-lg font-bold text-sm hover:bg-slate-800 transition-colors">
+            Sign In
+          </button>
+        </Link>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-6xl font-extrabold text-slate-900 tracking-tighter mb-4">Comparative.</h1>
+        <p className="text-xl text-slate-500 font-medium max-w-lg leading-relaxed">
+          Structure your analysis by building logical bridges between texts.
+        </p>
+      </div>
+    </div>
+  );
+}
+</file>
+
+<file path="src/components/SignInPage.jsx">
+import React from 'react';
+import { SignIn } from '@clerk/clerk-react';
+export default function SignInPage() {
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <SignIn appearance={{ elements: { footerAction: "hidden" } }} />
+    </div>
+  );
+}
+</file>
+
+<file path="src/lib/firebase.js">
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(app);
+// Initialize Auth
+const auth = getAuth(app);
+// Initialize Analytics (conditional check for browser environment often good practice, but standard init here)
+const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+export { app, db, auth, analytics };
+</file>
+
+<file path="src/lib/utils.js">
+import { clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+export function cn(...inputs) {
+  return twMerge(clsx(inputs))
+}
+</file>
+
+<file path="src/App.css">
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+.card {
+  padding: 2em;
+}
+.read-the-docs {
+  color: #888;
+}
+</file>
+
+<file path="src/App.jsx">
+import React from 'react'
+import { Routes, Route } from 'react-router-dom'
+import { SignedIn, SignedOut } from "@clerk/clerk-react"
+import ComparativeApp from './components/ComparativeApp'
+import LandingPage from './components/LandingPage'
+import SignInPage from './components/SignInPage'
+import Dashboard from './components/Dashboard'
+import FirebaseAuthProvider from './components/FirebaseAuthConfig'
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={
+        <>
+          <SignedIn>
+            <FirebaseAuthProvider>
+              <Dashboard />
+            </FirebaseAuthProvider>
+          </SignedIn>
+          <SignedOut>
+            <LandingPage />
+          </SignedOut>
+        </>
+      } />
+      <Route path="/map/:mapId" element={
+        <>
+          <SignedIn>
+            <FirebaseAuthProvider>
+              <ComparativeApp />
+            </FirebaseAuthProvider>
+          </SignedIn>
+          <SignedOut>
+            <LandingPage />
+          </SignedOut>
+        </>
+      } />
+      <Route path="/sign-in/*" element={<SignInPage />} />
+    </Routes>
+  )
+}
+export default App
+</file>
+
+<file path="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+</file>
+
+<file path="src/main.jsx">
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { ClerkProvider } from '@clerk/clerk-react'
+import './index.css'
+import App from './App.jsx'
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Missing Clerk Publishable Key")
+}
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ClerkProvider>
+  </StrictMode>,
+)
+</file>
+
+<file path="eslint.config.js">
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+</file>
+
+<file path="firebase.json">
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "australia-southeast1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "comparative",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@clerk/clerk-react": "^5.60.0",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "firebase": "^12.9.0",
+    "lucide-react": "^0.563.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.24",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.17",
+    "vite": "^7.2.4"
+  }
+}
+</file>
+
+<file path="postcss.config.js">
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+</file>
+
+<file path="tailwind.config.js">
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+</file>
+
+<file path="vite.config.js">
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('firebase')) {
+              return 'firebase';
+            }
+            if (id.includes('@clerk')) {
+              return 'clerk';
+            }
+            if (id.includes('lucide-react')) {
+              return 'ui-icons';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor';
+            }
+          }
+        }
+      }
+    }
+  }
+})
+</file>
+
+</files>

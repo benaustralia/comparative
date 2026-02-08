@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /maps/{mapId} {
+      // Helper function to check if email is in a list field
+      function isUserInList(fieldName) {
+        return resource.data.get(fieldName, []).hasAny([request.auth.token.email]);
+      }
+
+      // Allow create if authenticated
+      allow create: if request.auth != null;
+      
+      // TEMPORARY: Allow read/list for all authenticated users to fix migration issues
+      allow read: if request.auth != null;
+      
+      // Allow update if owner, legacy creator, or in write-access lists (sharedWith, editors)
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.ownerId || 
+        request.auth.uid == resource.data.userId || 
+        isUserInList('sharedWith') ||
+        isUserInList('editors')
+      );
+      
+      // Allow delete only if owner/creator
+      allow delete: if request.auth != null && (
+        request.auth.uid == resource.data.ownerId || 
+        request.auth.uid == resource.data.userId
+      );
+    }
+  }
+}
