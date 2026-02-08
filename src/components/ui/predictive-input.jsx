@@ -9,41 +9,25 @@ export const PredictiveInput = React.forwardRef(({
   className,
   ...props
 }, ref) => {
-  console.log('PREDICT_DEBUG_DATA:', suggestions)
   const [suggestion, setSuggestion] = React.useState("")
 
   const updateSuggestion = (val) => {
-    // If input is empty and we have a recommended value, show it
-    if (!val && recommended) {
-      setSuggestion(recommended);
-      return;
-    }
-
-    // If input has value, look for match in suggestions
+    if (!val && recommended) { setSuggestion(recommended); return }
     if (val && suggestions.length > 0) {
-      const match = suggestions.find(s => 
-        s.toLowerCase().startsWith(val.toLowerCase())
-      )
-      // Only show suggestion if it's not an exact match already (case-insensitive)
-      if (match && match.toLowerCase() !== val.toLowerCase()) {
-        setSuggestion(match)
-      } else {
-        setSuggestion("")
-      }
+      const match = suggestions.find(s => s.toLowerCase().startsWith(val.toLowerCase()))
+      setSuggestion(match && match.toLowerCase() !== val.toLowerCase() ? match : "")
     } else {
       setSuggestion("")
     }
   }
 
-  // Sync suggestion when value or props change
   React.useEffect(() => {
     updateSuggestion(props.value || "");
   }, [props.value, suggestions, recommended]);
 
   const handleInputChange = (e) => {
-    const value = e.target.value
     props.onChange?.(e)
-    updateSuggestion(value);
+    updateSuggestion(e.target.value)
   }
 
   const handleKeyDown = (e) => {
@@ -54,44 +38,38 @@ export const PredictiveInput = React.forwardRef(({
     props.onKeyDown?.(e)
   }
 
-  // Calculate the tail of the suggestion that hasn't been typed yet
-  const ghostTail = (suggestion && props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase())) 
-    ? suggestion.slice(props.value.length) 
-    : "";
-
-  console.log('PREDICT_DEBUG_MATCH:', { value: props.value, suggestion, tail: ghostTail })
+  const ghostTail = (suggestion && props.value && suggestion.toLowerCase().startsWith(props.value.toLowerCase()))
+    ? suggestion.slice(props.value.length) : ""
 
   return (
     <div className="relative w-full group font-sans">
-      {/* Ghost Text Layer - Mirror Technique */}
-      <div 
+      {/* Ghost Text Layer - Matches Input's border+padding coordinate system */}
+      <div
         className={cn(
-          "absolute inset-0 px-3 py-1 text-base md:text-sm pointer-events-none flex items-center bg-transparent font-normal select-none overflow-hidden whitespace-pre", 
+          "absolute inset-0 px-3 py-1 text-base md:text-sm pointer-events-none border border-transparent bg-transparent font-normal select-none overflow-hidden whitespace-pre z-[5] flex items-center",
           className
         )}
       >
-        {/* Case 1: Typing - Show invisible mirror + visible tail */}
         {props.value && ghostTail ? (
           <>
             <span className="text-transparent">{props.value}</span>
-            <span className="text-red-500">{ghostTail}</span>
+            <span className="text-muted-foreground opacity-30">{ghostTail}</span>
           </>
         ) : (
-          /* Case 2: Empty Input - Show full suggestion (if any) */
           !props.value && suggestion && (
-             <span className="text-red-500">{suggestion}</span>
+             <span className="text-muted-foreground opacity-30">{suggestion}</span>
           )
         )}
       </div>
-      
+
       {/* Real Input Layer */}
       <Input
         {...props}
         ref={ref}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        // Make background transparent so ghost shows through
-        className={cn("bg-transparent relative z-10 opacity-50", className)}
+        autoComplete="off"
+        className={cn("bg-transparent relative z-10", className)}
       />
     </div>
   )

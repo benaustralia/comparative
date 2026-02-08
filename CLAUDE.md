@@ -1,29 +1,21 @@
-# Collaborative Mapping Project: Desktop Workspace
+# High-Density Conciseness & Deployment Audit (Feb 2026 Standards)
 
-## 1. System Guardrails (Strict Enforcement)
-- **Architecture:** Clerk + Firebase (Sydney region).
-- **Auth SSOT:** Use Firebase UID (`ownerId`) for all permissions. 
-- **Owner UID:** `FgH8dLkSiHbYwF78PkCHmZvP3M12`.
-- **UI System:** Strictly **shadcn/ui** primitives only.
-- **No Experimentation:** - NO SVG filters, jitter, or Rough.js.
-    - NO mobile-responsive drawers; use desktop-only viewport.
-    - NO custom Tailwind "utility soup" in main views.
+## Core Directive
+Refactor the codebase for extreme conciseness without sacrificing legibility or breaking the CI/CD pipeline. Follow "Locality of Behavior" principles: keep logic close to the UI.
 
-## 2. Desktop Layout & Dashboard
-- **Viewport:** `h-screen w-screen overflow-hidden`.
-- **Panels:** Use shadcn `ResizablePanelGroup`.
-    - **Sidebar (Left):** Dashboard for creating/switching projects.
-    - **Canvas (Main):** React Flow mapping area.
-- **Project Creation:** Dialog must require "Title" and "Form" (e.g., Play, Novel) for both Text A and Text B.
-- **Project Name:** Automatically generate as `[Title A] vs. [Title B]`.
+## Constraints & Anti-Patterns
+- **File Length:** Target < 60 lines per file. If a file exceeds this, justify every line.
+- **No Code Splitting:** Do not move logic into new files to meet line counts. Merge and simplify instead.
+- **No Horizontal Stacking:** Avoid unreadable one-liners. Maintain vertical scannability.
+- **No Single-Use Hooks:** Inline logic into the component unless shared across 3+ domains.
+- **No Over-Engineering:** Remove unnecessary wrappers, complex state managers, and "abstraction for the sake of abstraction."
 
-## 3. Mapping Functionality
-- **Cantilever (Bridge):** A bridge contains: Context, Evidence, Meaning A/B, and Synthesis.
-- **Map View:** Display every data point in discrete, stable boxes connected by clean arrows.
-- **Bridge Removal:** Add a Lucide `Trash2` icon to each bridge group to delete that cantilever.
-- **Sharing:** Re-implement "Share" button to add emails to `editors` and `viewers` Firestore arrays.
+## Technical Guardrails (Deployment Sync)
+- **CI/CD Alignment:** Any change to `package.json` scripts MUST be mirrored in `.github/workflows/firebase-hosting-merge.yml`.
+- **Build Output:** The `public` directory in `firebase.json` must exactly match the output folder of the `npm run build` command. Do not rename build directories without updating both files.
+- **Metadata Automation:** In the project creation flow, automate 'Year' and 'Form' as background metadata. Remove these from the visible UI.
 
-## 4. Components & Typography
-- **UI:** Inter (Sans-serif).
-- **Text:** High-legibility Serif for literature.
-- **Atomic Components:** Extract logic into `ProjectSidebar`, `BridgeNode`, and `ShareModal`.
+## Coding Style (2026 February Standards)
+- **Declarative Density:** Use modern ECMAScript (signals, native pattern matching) to collapse boilerplate.
+- **Predictive UX:** Use the `VCE_LIBRARY_2026` for ghost-text typeahead. 
+- **Typography:** UI/Inputs in 'Inter'; Final Titles/Nodes in 'Serif'.

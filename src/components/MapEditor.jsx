@@ -7,6 +7,8 @@ import StackEditor from './StackEditor';
 import FlowCanvas from './FlowCanvas';
 import ShareModal from './ShareModal';
 
+const modes = [{ key: 'stack', Icon: Edit3 }, { key: 'map', Icon: Map }];
+
 export default function MapEditor({ mapId }) {
   const { firebaseUid } = useFirebaseAuth();
   const [mapData, setMapData] = useState(null);
@@ -17,69 +19,26 @@ export default function MapEditor({ mapId }) {
   const saveTimer = useRef(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const data = await getMap(mapId, firebaseUid);
-        if (data) {
-          setMapData(data);
-          setBridges(data.bridges || []);
-        }
-      } catch (error) {
-        console.error("Failed to load map", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (mapId && firebaseUid) {
-      load();
-    }
+    if (!mapId || !firebaseUid) return;
+    setLoading(true);
+    getMap(mapId, firebaseUid).then(data => {
+      if (data) { setMapData(data); setBridges(data.bridges || []); }
+    }).catch(err => console.error("Failed to load map", err))
+      .finally(() => setLoading(false));
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, [mapId, firebaseUid]);
 
-  const saveBridges = useCallback((updatedBridges) => {
-    setBridges(updatedBridges);
+  const saveBridges = useCallback((updated) => {
+    setBridges(updated);
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      updateMapBridges(mapId, updatedBridges).catch(err =>
-        console.error("Failed to save bridges", err)
-      );
-    }, 800);
+    saveTimer.current = setTimeout(() => updateMapBridges(mapId, updated).catch(console.error), 800);
   }, [mapId]);
 
-  const handleDeleteBridge = (bridgeId) => {
-    const updated = bridges.filter(b => b.id !== bridgeId);
-    saveBridges(updated);
-  };
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-    };
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-6 w-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
-          <p className="text-sm font-medium">Loading map...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!mapData) {
-    return (
-      <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400">
-        <p className="text-sm font-medium">Map not found</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400"><div className="h-6 w-6 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /></div>;
+  if (!mapData) return <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400"><p className="text-sm font-medium">Map not found</p></div>;
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
       <div className="px-6 py-3 border-b flex items-center justify-between bg-white">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{mapData.title}</h2>
@@ -91,50 +50,21 @@ export default function MapEditor({ mapId }) {
         </div>
         <div className="flex items-center gap-2">
           <div className="bg-slate-100 p-1 rounded-lg flex gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className={`h-8 w-8 ${mode === 'stack' ? 'bg-white shadow-sm' : 'text-slate-400'}`}
-              onClick={() => setMode('stack')}
-            >
-              <Edit3 size={16} />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className={`h-8 w-8 ${mode === 'map' ? 'bg-white shadow-sm' : 'text-slate-400'}`}
-              onClick={() => setMode('map')}
-            >
-              <Map size={16} />
-            </Button>
+            {modes.map(({ key, Icon }) => (
+              <Button key={key} size="icon" variant="ghost" className={`h-8 w-8 ${mode === key ? 'bg-white shadow-sm' : 'text-slate-400'}`} onClick={() => setMode(key)}>
+                <Icon size={16} />
+              </Button>
+            ))}
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
-            <Share2 className="mr-2 h-4 w-4" /> Share
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
         </div>
       </div>
-
-      {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {mode === 'stack' ? (
-          <StackEditor
-            bridges={bridges}
-            onBridgesChange={saveBridges}
-            sourceAForm={mapData.sourceAForm || ''}
-            sourceBForm={mapData.sourceBForm || ''}
-          />
-        ) : (
-          <FlowCanvas bridges={bridges} onBridgeDelete={handleDeleteBridge} />
-        )}
+        {mode === 'stack'
+          ? <StackEditor bridges={bridges} onBridgesChange={saveBridges} sourceAForm={mapData.sourceAForm || ''} sourceBForm={mapData.sourceBForm || ''} />
+          : <FlowCanvas bridges={bridges} onBridgeDelete={(id) => saveBridges(bridges.filter(b => b.id !== id))} />}
       </div>
-
-      {/* Share Modal */}
-      <ShareModal
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        mapId={mapId}
-        mapData={mapData}
-      />
+      <ShareModal open={shareOpen} onOpenChange={setShareOpen} mapId={mapId} mapData={mapData} />
     </div>
   );
 }

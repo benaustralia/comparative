@@ -63,26 +63,4 @@ export const discardItem = async (mapId, bridgeId) => {
 // Curriculum Library
 import { VCE_LIBRARY_2026 } from './vce-data';
 
-export const getLibrary = async () => {
-  try {
-    const q = query(collection(db, "curriculum_library"));
-    const snapshot = await getDocs(q);
-    const library = snapshot.docs.map(doc => doc.data());
-    
-    // Auto-seed if empty
-    if (library.length === 0) {
-      console.log("Seeding library...");
-      const batch = [];
-      for (const item of VCE_LIBRARY_2026) {
-        await addDoc(collection(db, "curriculum_library"), item);
-        batch.push(item);
-      }
-      return batch;
-    }
-    
-    return library;
-  } catch (error) {
-    console.error("Error fetching library:", error);
-    return [];
-  }
-};
+export const getLibrary = async () => VCE_LIBRARY_2026;

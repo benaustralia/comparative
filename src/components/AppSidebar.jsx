@@ -9,7 +9,7 @@ import { VCE_LIBRARY_2026 } from '@/lib/vce-data';
 import { PredictiveInput } from '@/components/ui/predictive-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useFirebaseAuth } from './FirebaseAuthConfig';
 import { createMap, getUserMaps, getLibrary } from '@/lib/db-service';
@@ -103,6 +103,7 @@ export default function AppSidebar() {
               <DialogTitle className="font-serif italic text-xl">
                 {form.watch("titleA") || "Text A"} vs. {form.watch("titleB") || "Text B"}
               </DialogTitle>
+              <DialogDescription>Select two texts to compare.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
