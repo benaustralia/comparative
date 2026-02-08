@@ -5,7 +5,6 @@ import { Plus, BookOpen } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { projectSchema } from '@/lib/schemas';
-import { VCE_LIBRARY_2026 } from '@/lib/vce-data';
 import { PredictiveInput } from '@/components/ui/predictive-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
