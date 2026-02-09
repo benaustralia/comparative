@@ -1,21 +1,38 @@
-# High-Density Conciseness & Deployment Audit (Feb 2026 Standards)
+Claude, I am providing an updated architectural vision for our application, transitioning it from a bridge-mapping tool to a comprehensive VCE Literature Essay Engine.
 
-## Core Directive
-Refactor the codebase for extreme conciseness without sacrificing legibility or breaking the CI/CD pipeline. Follow "Locality of Behavior" principles: keep logic close to the UI.
+Please produce a detailed and reasoned plan for the following implementation:
 
-## Constraints & Anti-Patterns
-- **File Length:** Target < 60 lines per file. If a file exceeds this, justify every line.
-- **No Code Splitting:** Do not move logic into new files to meet line counts. Merge and simplify instead.
-- **No Horizontal Stacking:** Avoid unreadable one-liners. Maintain vertical scannability.
-- **No Single-Use Hooks:** Inline logic into the component unless shared across 3+ domains.
-- **No Over-Engineering:** Remove unnecessary wrappers, complex state managers, and "abstraction for the sake of abstraction."
+1. Data & State Refactoring:
 
-## Technical Guardrails (Deployment Sync)
-- **CI/CD Alignment:** Any change to `package.json` scripts MUST be mirrored in `.github/workflows/firebase-hosting-merge.yml`.
-- **Build Output:** The `public` directory in `firebase.json` must exactly match the output folder of the `npm run build` command. Do not rename build directories without updating both files.
-- **Metadata Automation:** In the project creation flow, automate 'Year' and 'Form' as background metadata. Remove these from the visible UI.
+Initialize the knowledgeLibrary using the provided VCE hierarchies (Form > Convention > Generic Convention > Feature > Effect > Lens).
 
-## Coding Style (2026 February Standards)
-- **Declarative Density:** Use modern ECMAScript (signals, native pattern matching) to collapse boilerplate.
-- **Predictive UX:** Use the `VCE_LIBRARY_2026` for ghost-text typeahead. 
-- **Typography:** UI/Inputs in 'Inter'; Final Titles/Nodes in 'Serif'.
+Perform a global rename of the tech property to feature.
+
+Update the Essay state object to support a modular structure: one Foundation (Intro), up to four Cantilevers (Body Paragraphs), and one Keystone (Conclusion).
+
+2. Sidebar & Navigation Overhaul:
+
+Implement the status-check UI in the sidebar where each essay segment (Intro, Body P1-4, Conclusion) has a 'Draft' and 'Final' state toggle.
+
+The sidebar should display the actual essay question or a short identifier (e.g., 'Macbeth & Power').
+
+3. The 'Cantilever' (Body Paragraph) Zoom Logic:
+
+Develop a strategy for the mind map to allow for 'Exploded Views.' When a student selects or zooms into a 'Cantilever' node, it should reveal a nested T-EE-EE-EE-L (Topic, Evidence, Explanation, Link) sub-structure.
+
+This sub-structure must allow for direct text editing, modeling, and 'Mentor Me' interactions.
+
+4. Context-Aware Input Overhaul:
+
+Refactor the input forms to move away from free-text and toward selection-based inputs.
+
+Once a user selects a Form (e.g., Film), the Feature dropdown must dynamically filter to show only relevant technical tools (e.g., Camera Angles, Mise en scène).
++1
+
+5. AI Chaining (Mentor & Model):
+
+Create a logic for chaining metadata (Form + Convention + Feature + Effect + Lens) into pre-defined prompts for Gemini.
+
+Design the [Paragraph Example] button to trigger a read-only 'Locked Model' overlay that prevents copy-pasting but allows for 'Ghostwriting' (tracing the logic).
+
+Please provide a technical roadmap detailing the sequence of these updates and how you intend to manage the state transitions between the macro (Essay) and micro (TEEL) views.

@@ -42,19 +42,181 @@ export const FORMS = {
 
 export const FORM_LOOKUP = Object.values(FORMS).flatMap(g => g.options).reduce((acc, opt) => ({...acc, [opt.id]: opt}), {});
 
-export const TECHS = {
-  novel: ['First Person', 'Third Person', 'Metaphor', 'Simile', 'Symbolism', 'Motif', 'Imagery', 'Tone'],
-  novella: ['First Person', 'Third Person', 'Metaphor', 'Symbolism', 'Compressed Timeline'],
-  anthology: ['Thematic Echo', 'Motif Repetition', 'Linear', 'Non-linear', 'Circular Narrative', 'Frame Story'],
-  film: ['Close-up', 'Long Shot', 'Dutch Angle', 'Tracking Shot', 'Diegetic Sound', 'Non-diegetic Score', 'Lighting', 'Montage'],
-  docu: ['Talking Head', 'Archival Footage', 'Voice-over', 'Statistics', 'Expert Interview', 'Reconstruction'],
-  short_film: ['Minimalism', 'Close-up', 'Ambient Sound', 'Single Location', 'Twist Ending'],
-  series: ['Episode Arc', 'Season Arc', 'Cliffhanger', 'Cold Open', 'Flashback', 'Parallel Plot'],
-  play: ['Soliloquy', 'Monologue', 'Aside', 'Stage Directions', 'Lighting Cues', 'Prop Usage', 'Silence'],
-  musical: ['Leitmotif', 'Diegetic Song', 'Ensemble Number', 'Reprise', 'Underscoring'],
-  gn: ['Gutter', 'Splash Page', 'Bleed', 'Emanata', 'Graphic Weight', 'Salience', 'Vectors', 'Speech Balloon'],
-  pic_book: ['Visual-Textual Gap', 'Gutter Space', 'Peritext', 'Page Turn', 'Wordless Spread'],
-  memoir: ['Anecdote', 'Reflective Voice', 'Emotive Language', 'Selective Memory', 'Fragmentation'],
-  bio: ['Chronological Structure', 'Expert Opinion', 'Primary Source', 'Objectivity', 'Historical Context'],
-  essay: ['Rhetorical Question', 'Thesis Statement', 'Anecdote', 'Expert Opinion', 'Statistics', 'Emotive Language']
+export const KNOWLEDGE_LIBRARY = {
+  novel: {
+    conventions: {
+      'Narrative Voice': { features: ['First Person', 'Third Person', 'Unreliable Narrator', 'Stream of Consciousness'] },
+      'Language': { features: ['Metaphor', 'Simile', 'Symbolism', 'Motif', 'Imagery', 'Tone', 'Irony', 'Allusion'] },
+      'Structure': { features: ['Flashback', 'Non-linear Timeline', 'Epistolary', 'Frame Narrative', 'Compressed Timeline'] },
+    },
+    genericConventions: {
+      'Gothic': { features: ['Dark Setting', 'Supernatural Elements', 'Psychological Terror', 'Decay'] },
+      'Bildungsroman': { features: ['Coming of Age', 'Loss of Innocence', 'Moral Growth', 'Self-Discovery'] },
+    },
+  },
+  novella: {
+    conventions: {
+      'Narrative Voice': { features: ['First Person', 'Third Person', 'Unreliable Narrator'] },
+      'Language': { features: ['Metaphor', 'Symbolism', 'Compressed Timeline', 'Motif'] },
+      'Structure': { features: ['Single Plotline', 'Tight Focus', 'Frame Narrative'] },
+    },
+    genericConventions: {
+      'Gothic': { features: ['Dark Setting', 'Psychological Terror', 'Isolation'] },
+      'Allegory': { features: ['Extended Metaphor', 'Symbolic Characters', 'Moral Lesson'] },
+    },
+  },
+  anthology: {
+    conventions: {
+      'Thematic Design': { features: ['Thematic Echo', 'Motif Repetition', 'Recurring Character'] },
+      'Structure': { features: ['Linear', 'Non-linear', 'Circular Narrative', 'Frame Story'] },
+      'Narrative Voice': { features: ['Shifting Perspective', 'Collective Voice', 'First Person'] },
+    },
+    genericConventions: {
+      'Linked Collection': { features: ['Shared Setting', 'Recurring Characters', 'Thematic Unity'] },
+    },
+  },
+  film: {
+    conventions: {
+      'Camera Language': { features: ['Close-up', 'Long Shot', 'Dutch Angle', 'Tracking Shot', 'Aerial Shot', 'POV Shot'] },
+      'Sound Design': { features: ['Diegetic Sound', 'Non-diegetic Score', 'Ambient Sound', 'Silence', 'Leitmotif'] },
+      'Mise en Scene': { features: ['Lighting', 'Costume', 'Colour Palette', 'Set Design', 'Blocking'] },
+      'Editing': { features: ['Montage', 'Cross-cutting', 'Jump Cut', 'Match Cut', 'Slow Motion'] },
+    },
+    genericConventions: {
+      'Hollywood Ending': { features: ['Resolution', 'Moral Closure', 'Happy Ending'] },
+      'Auteur Style': { features: ['Signature Framing', 'Recurring Themes', 'Distinctive Palette'] },
+    },
+  },
+  docu: {
+    conventions: {
+      'Interview': { features: ['Talking Head', 'Expert Interview', 'Vox Pop'] },
+      'Footage': { features: ['Archival Footage', 'Reconstruction', 'Observational'] },
+      'Narration': { features: ['Voice-over', 'Statistics', 'On-screen Text'] },
+    },
+    genericConventions: {
+      'Expository': { features: ['Authoritative Voice', 'Evidence-Based', 'Logical Structure'] },
+      'Participatory': { features: ['Director On-camera', 'Provocation', 'Subjective Lens'] },
+    },
+  },
+  short_film: {
+    conventions: {
+      'Camera Language': { features: ['Close-up', 'Single Location', 'Handheld'] },
+      'Sound Design': { features: ['Ambient Sound', 'Minimalist Score', 'Silence'] },
+      'Structure': { features: ['Minimalism', 'Twist Ending', 'Open Ending'] },
+    },
+    genericConventions: {
+      'Experimental': { features: ['Non-narrative', 'Abstract Imagery', 'Found Footage'] },
+    },
+  },
+  series: {
+    conventions: {
+      'Narrative Arc': { features: ['Episode Arc', 'Season Arc', 'Series Arc'] },
+      'Structure': { features: ['Cold Open', 'Cliffhanger', 'Flashback', 'Parallel Plot'] },
+      'Character': { features: ['Ensemble Cast', 'Character Development', 'Recurring Antagonist'] },
+    },
+    genericConventions: {
+      'Prestige TV': { features: ['Complex Narrative', 'Moral Ambiguity', 'Cinematic Quality'] },
+    },
+  },
+  play: {
+    conventions: {
+      'Stage Directions': { features: ['Blocking', 'Gesture', 'Pause', 'Silence'] },
+      'Staging': { features: ['Lighting Cues', 'Set Design', 'Prop Usage', 'Costume'] },
+      'Performance': { features: ['Soliloquy', 'Monologue', 'Aside', 'Dialogue'] },
+    },
+    genericConventions: {
+      'Tragedy': { features: ['Hamartia', 'Catharsis', 'Reversal of Fortune', 'Fatal Flaw'] },
+      'Comedy': { features: ['Mistaken Identity', 'Wordplay', 'Social Satire', 'Happy Resolution'] },
+    },
+  },
+  musical: {
+    conventions: {
+      'Musical Elements': { features: ['Leitmotif', 'Diegetic Song', 'Ensemble Number', 'Reprise', 'Underscoring'] },
+      'Staging': { features: ['Choreography', 'Spectacle', 'Lighting', 'Costume'] },
+    },
+    genericConventions: {
+      'Book Musical': { features: ['Integrated Songs', 'Character Driven', 'Narrative Throughline'] },
+      'Jukebox Musical': { features: ['Pre-existing Songs', 'Nostalgic Appeal', 'Cultural Commentary'] },
+    },
+  },
+  gn: {
+    conventions: {
+      'Panel Design': { features: ['Gutter', 'Splash Page', 'Bleed', 'Panel Layout'] },
+      'Visual Language': { features: ['Emanata', 'Graphic Weight', 'Salience', 'Vectors', 'Colour Symbolism'] },
+      'Text': { features: ['Speech Balloon', 'Thought Bubble', 'Caption Box', 'Sound Effect'] },
+    },
+    genericConventions: {
+      'Memoir GN': { features: ['Personal Testimony', 'Simplified Art', 'Timeline Shifts'] },
+    },
+  },
+  pic_book: {
+    conventions: {
+      'Visual Design': { features: ['Visual-Textual Gap', 'Gutter Space', 'Page Turn', 'Wordless Spread'] },
+      'Peritext': { features: ['Endpapers', 'Cover Art', 'Dedication Page', 'Typography'] },
+    },
+    genericConventions: {
+      'Postmodern': { features: ['Metafiction', 'Ironic Juxtaposition', 'Reader Participation'] },
+    },
+  },
+  memoir: {
+    conventions: {
+      'Voice': { features: ['Reflective Voice', 'Emotive Language', 'Anecdote', 'Confessional Tone'] },
+      'Memory': { features: ['Selective Memory', 'Fragmentation', 'Sensory Detail'] },
+      'Structure': { features: ['Chronological', 'Thematic', 'Episodic'] },
+    },
+    genericConventions: {
+      'Trauma Memoir': { features: ['Non-linear Time', 'Dissociation', 'Recovery Arc'] },
+    },
+  },
+  bio: {
+    conventions: {
+      'Research': { features: ['Primary Source', 'Expert Opinion', 'Historical Context'] },
+      'Structure': { features: ['Chronological Structure', 'Thematic Structure'] },
+      'Voice': { features: ['Objectivity', 'Authoritative Tone', 'Critical Distance'] },
+    },
+    genericConventions: {
+      'Authorised Bio': { features: ['Subject Collaboration', 'Insider Access', 'Sympathetic Lens'] },
+    },
+  },
+  essay: {
+    conventions: {
+      'Rhetoric': { features: ['Rhetorical Question', 'Thesis Statement', 'Anecdote', 'Expert Opinion'] },
+      'Evidence': { features: ['Statistics', 'Case Study', 'Quotation'] },
+      'Language': { features: ['Emotive Language', 'Irony', 'Formal Register'] },
+    },
+    genericConventions: {
+      'Personal Essay': { features: ['Subjective Voice', 'Narrative Arc', 'Reflection'] },
+      'Argumentative': { features: ['Counter-argument', 'Logical Structure', 'Persuasive Appeals'] },
+    },
+  },
 };
+
+export const EFFECTS = [
+  'Audience identification', 'Audience detachment', 'Changing message through medium shift',
+  'Foregrounding relationships', 'Infantilising', 'Marginalising', 'Empathy building',
+  'Creating suspense', 'Subverting expectations', 'Social commentary',
+];
+
+export const LENSES = [
+  'Feminist', 'Marxist', 'Postcolonial', 'Psychoanalytic',
+  'Ecocritical', 'New Historicist', 'Structuralist', 'Reader-Response',
+];
+
+// Helpers
+export const getConventions = (formId) => Object.keys(KNOWLEDGE_LIBRARY[formId]?.conventions || {});
+export const getGenericConventions = (formId) => Object.keys(KNOWLEDGE_LIBRARY[formId]?.genericConventions || {});
+export const getFeatures = (formId, convention) => {
+  const lib = KNOWLEDGE_LIBRARY[formId];
+  return lib?.conventions[convention]?.features || lib?.genericConventions[convention]?.features || [];
+};
+
+// Backward compat: flat features per form derived from library
+export const FEATURES = Object.fromEntries(
+  Object.entries(KNOWLEDGE_LIBRARY).map(([id, lib]) => [
+    id,
+    [...new Set([
+      ...Object.values(lib.conventions).flatMap(c => c.features),
+      ...Object.values(lib.genericConventions).flatMap(c => c.features),
+    ])],
+  ])
+);

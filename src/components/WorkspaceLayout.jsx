@@ -31,8 +31,8 @@ export default function WorkspaceLayout() {
         ) : (
           <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400 text-center">
             <div>
-              <p className="text-lg font-semibold">Select a project</p>
-              <p className="text-sm mt-1">Choose a project from the sidebar or create a new one</p>
+              <p className="text-lg font-semibold">Select an essay</p>
+              <p className="text-sm mt-1">Choose an essay from the sidebar or create a new one</p>
             </div>
           </div>
         )}

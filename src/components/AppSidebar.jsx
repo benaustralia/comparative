@@ -8,6 +8,7 @@ import { projectSchema } from '@/lib/schemas';
 import { PredictiveInput } from '@/components/ui/predictive-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useFirebaseAuth } from './FirebaseAuthConfig';
@@ -23,6 +24,17 @@ const Field = ({ control, name, children }) => (
   )} />
 );
 
+const SegmentDots = ({ segments }) => {
+  if (!segments?.length) return null;
+  return (
+    <div className="flex gap-1 mt-1">
+      {segments.map(s => (
+        <div key={s.id} className={`h-2 w-2 rounded-full ${s.status === 'final' ? 'bg-emerald-500' : 'bg-slate-300'}`} title={`${s.kind}: ${s.status}`} />
+      ))}
+    </div>
+  );
+};
+
 export default function AppSidebar() {
   const { user } = useUser();
   const { firebaseUid, isAuthReady } = useFirebaseAuth();
@@ -36,33 +48,31 @@ export default function AppSidebar() {
 
   const form = useForm({
     resolver: zodResolver(projectSchema),
-    defaultValues: { titleA: "", yearA: "", authorA: "", formA: "", titleB: "", yearB: "", authorB: "", formB: "" },
+    defaultValues: { titleA: "", yearA: "", authorA: "", formA: "", titleB: "", yearB: "", authorB: "", formB: "", essayQuestion: "" },
   });
 
-  // Fetch library on mount/auth
+  useEffect(() => { getLibrary().then(setLibrary); }, []);
+
   useEffect(() => {
-    getLibrary().then(setLibrary);
+    const handler = (e) => {
+      const { mapId: id, segments } = e.detail;
+      setMaps(prev => prev.map(m => m.id === id ? { ...m, segments } : m));
+    };
+    window.addEventListener('segments-updated', handler);
+    return () => window.removeEventListener('segments-updated', handler);
   }, []);
 
   const handlePredict = (side, text) => {
     form.setValue(`title${side}`, text);
     const data = library.find(t => t.title.toLowerCase() === text.toLowerCase());
     if (!data) return;
-
     form.setValue(`year${side}`, data.year);
     form.setValue(`author${side}`, data.author);
     form.setValue(`form${side}`, data.form);
-
     if (side === 'A' && data.suggestedB) {
       const sug = library.find(t => t.title === data.suggestedB.title);
-      if (sug) {
-        handlePredict('B', sug.title);
-      } else {
-        form.setValue('titleB', data.suggestedB.title);
-        form.setValue('yearB', data.suggestedB.year);
-        form.setValue('authorB', data.suggestedB.author);
-        form.setValue('formB', data.suggestedB.form);
-      }
+      if (sug) { handlePredict('B', sug.title); }
+      else { form.setValue('titleB', data.suggestedB.title); form.setValue('yearB', data.suggestedB.year); form.setValue('authorB', data.suggestedB.author); form.setValue('formB', data.suggestedB.form); }
     }
   };
 
@@ -80,7 +90,7 @@ export default function AppSidebar() {
   const onSubmit = async (data) => {
     const uid = firebaseUid || user?.id;
     const name = `${data.titleA} (${data.yearA}) vs. ${data.titleB} (${data.yearB})`;
-    const id = await createMap(uid, { title: name, sourceA: data.titleA, sourceB: data.titleB, formA: data.formA, formB: data.formB, yearA: data.yearA, authorA: data.authorA, yearB: data.yearB, authorB: data.authorB });
+    const id = await createMap(uid, { title: name, sourceA: data.titleA, sourceB: data.titleB, formA: data.formA, formB: data.formB, yearA: data.yearA, authorA: data.authorA, yearB: data.yearB, authorB: data.authorB, essayQuestion: data.essayQuestion || '' });
     form.reset(); setDialogOpen(false);
     getUserMaps(uid, user?.primaryEmailAddress?.emailAddress).then(m => setMaps(sortByDate(m)));
     navigate(`/map/${id}`);
@@ -102,37 +112,37 @@ export default function AppSidebar() {
         <div className="flex items-center justify-between px-2 py-2">
           <div>
             <h1 className="text-3xl font-black text-sidebar-foreground tracking-tight font-serif">Comparative</h1>
-            <p className="text-sm font-semibold text-sidebar-foreground/60 uppercase tracking-widest">Bridge Your Meanings</p>
+            <p className="text-sm font-semibold text-sidebar-foreground/60 uppercase tracking-widest">Essay Builder</p>
           </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild><Button size="sm" className="w-fit"><Plus className="mr-2 h-4 w-4" /> New Project</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm" className="w-fit"><Plus className="mr-2 h-4 w-4" /> New Essay</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="font-serif italic text-xl">
                 {form.watch("titleA") || "Text A"} vs. {form.watch("titleB") || "Text B"}
               </DialogTitle>
-              <DialogDescription>Select two texts to compare.</DialogDescription>
+              <DialogDescription>Set up your comparative essay.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-blue-600 uppercase tracking-wider flex justify-between">
-                    <span>Text A</span><span className="text-[10px] text-slate-400 font-normal">Primary Text</span>
-                  </div>
-                  <Field control={form.control} name="titleA">{f => <PredictiveInput placeholder="Title (e.g. Macbeth)" className="h-9 text-sm" {...f} suggestions={titles} onPredictionAccept={(t) => handlePredict('A', t)} />}</Field>
-                  <Field control={form.control} name="authorA">{f => <Input placeholder="Author" className="h-8 text-xs" {...f} />}</Field>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Topic</div>
+                  <Field control={form.control} name="essayQuestion">{f => <Textarea placeholder="e.g. How do both texts explore the corrupting nature of power?" className="min-h-[60px] text-sm resize-none" {...f} />}</Field>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-xs font-bold text-orange-600 uppercase tracking-wider flex justify-between">
-                    <span>Text B</span><span className="text-[10px] text-slate-400 font-normal">Comparison</span>
-                  </div>
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Source Text</div>
+                  <Field control={form.control} name="titleA">{f => <PredictiveInput placeholder="Title (e.g. Macbeth)" className="h-9 text-sm" {...f} suggestions={titles} onPredictionAccept={(t) => handlePredict('A', t)} />}</Field>
+                  <Field control={form.control} name="authorA">{f => <Input placeholder="Author" className="h-9 text-sm" {...f} />}</Field>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Transformed Text</div>
                   <Field control={form.control} name="titleB">{f => <PredictiveInput placeholder="Title (e.g. Animal Farm)" className="h-9 text-sm" {...f} suggestions={titles} onPredictionAccept={(t) => handlePredict('B', t)} />}</Field>
-                  <Field control={form.control} name="authorB">{f => <Input placeholder="Author" className="h-8 text-xs" {...f} />}</Field>
+                  <Field control={form.control} name="authorB">{f => <Input placeholder="Author" className="h-9 text-sm" {...f} />}</Field>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit">Create Project</Button>
+                  <Button type="submit">Create Essay</Button>
                 </DialogFooter>
               </form>
             </Form>
@@ -141,15 +151,15 @@ export default function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          <SidebarGroupLabel>Essays</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? <div className="px-4 py-2 text-xs text-slate-400">Loading...</div>
                 : !maps.length ? (
                   <div className="text-center py-8 px-4">
                     <BookOpen className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-slate-500">No projects yet</p>
-                    <p className="text-xs text-slate-400 mt-1">Create your first project above</p>
+                    <p className="text-sm font-medium text-slate-500">No essays yet</p>
+                    <p className="text-xs text-slate-400 mt-1">Create your first essay above</p>
                   </div>
                 ) : maps.map(map => (
                   <SidebarMenuItem key={map.id} className="group/item">
@@ -165,11 +175,14 @@ export default function AppSidebar() {
                             </TooltipTrigger>
                             <TooltipContent side="right">{map.sourceA || map.title}{map.sourceB ? ` vs. ${map.sourceB}` : ''}</TooltipContent>
                           </Tooltip>
-                          <div className="text-xs text-muted-foreground mt-1">{map.bridges?.length || 0} bridge{(map.bridges?.length || 0) !== 1 ? 's' : ''}</div>
+                          {map.essayQuestion
+                            ? <div className="text-[10px] text-purple-500 mt-1 truncate italic">{map.essayQuestion}</div>
+                            : <div className="text-xs text-muted-foreground mt-1">{map.segments?.length || map.bridges?.length || 0} segment{(map.segments?.length || map.bridges?.length || 0) !== 1 ? 's' : ''}</div>}
+                          <SegmentDots segments={map.segments} />
                         </div>
                       </button>
                     </SidebarMenuButton>
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover/item:opacity-100 transition-opacity text-slate-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setDeleteTarget(map); }} title="Delete project">
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover/item:opacity-100 transition-opacity text-slate-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setDeleteTarget(map); }} title="Delete essay">
                       <Trash2 size={14} />
                     </Button>
                   </SidebarMenuItem>
@@ -184,8 +197,8 @@ export default function AppSidebar() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
-            <DialogDescription>This will permanently delete "{deleteTarget?.title}". This action cannot be undone.</DialogDescription>
+            <DialogTitle>Delete Essay</DialogTitle>
+            <DialogDescription>This will permanently delete &ldquo;{deleteTarget?.title}&rdquo;. This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
