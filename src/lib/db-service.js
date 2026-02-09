@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, addDoc, getDocs, getDoc, doc, updateDoc, query, where, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, query, where, serverTimestamp } from 'firebase/firestore';
 
 const ref = (id) => doc(db, "maps", id);
 const ts = () => serverTimestamp();
@@ -51,6 +51,9 @@ export const getMap = async (mapId, currentUserId) => {
   return { id: docSnap.id, ...data, ...ensureArrays(data) };
 };
 
+export const updateMapDetails = async (mapId, fields) =>
+  updateDoc(ref(mapId), { ...fields, updatedAt: ts() });
+
 export const updateMapBridges = async (mapId, bridges) =>
   updateDoc(ref(mapId), { bridges, updatedAt: ts() });
 
@@ -59,6 +62,8 @@ export const discardItem = async (mapId, bridgeId) => {
   if (!docSnap.exists()) return;
   await updateDoc(ref(mapId), { bridges: (docSnap.data().bridges || []).filter(b => b.id !== bridgeId), updatedAt: ts() });
 };
+
+export const deleteMap = async (mapId) => deleteDoc(ref(mapId));
 
 // Curriculum Library
 export const getLibrary = async () => {

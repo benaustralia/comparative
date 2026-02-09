@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser, UserButton } from '@clerk/clerk-react';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { projectSchema } from '@/lib/schemas';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useFirebaseAuth } from './FirebaseAuthConfig';
-import { createMap, getUserMaps, getLibrary } from '@/lib/db-service';
+import { createMap, getUserMaps, getLibrary, deleteMap } from '@/lib/db-service';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
@@ -32,6 +32,7 @@ export default function AppSidebar() {
   const [library, setLibrary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const form = useForm({
     resolver: zodResolver(projectSchema),
@@ -85,6 +86,14 @@ export default function AppSidebar() {
     navigate(`/map/${id}`);
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteMap(deleteTarget.id);
+    setMaps(prev => prev.filter(m => m.id !== deleteTarget.id));
+    if (mapId === deleteTarget.id) navigate('/');
+    setDeleteTarget(null);
+  };
+
   const titles = library.map(t => t.title);
 
   return (
@@ -92,8 +101,8 @@ export default function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center justify-between px-2 py-2">
           <div>
-            <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">Comparative</h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bridge Your Meanings</p>
+            <h1 className="text-3xl font-black text-sidebar-foreground tracking-tight font-serif">Comparative</h1>
+            <p className="text-sm font-semibold text-sidebar-foreground/60 uppercase tracking-widest">Bridge Your Meanings</p>
           </div>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -143,20 +152,26 @@ export default function AppSidebar() {
                     <p className="text-xs text-slate-400 mt-1">Create your first project above</p>
                   </div>
                 ) : maps.map(map => (
-                  <SidebarMenuItem key={map.id}>
+                  <SidebarMenuItem key={map.id} className="group/item">
                     <SidebarMenuButton asChild isActive={map.id === mapId} className="h-auto py-3">
                       <button onClick={() => navigate(`/map/${map.id}`)}>
-                        <div className="w-full text-left">
+                        <div className="w-full text-left pr-6">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="text-sm font-semibold truncate">{map.title}</div>
+                              <div className="leading-tight">
+                                <div className="text-sm font-semibold text-sidebar-foreground truncate">{map.sourceA || map.title}</div>
+                                {map.sourceB && <div className="text-xs text-muted-foreground italic">vs. <span className="font-semibold">{map.sourceB}</span></div>}
+                              </div>
                             </TooltipTrigger>
-                            <TooltipContent side="right">{map.title}</TooltipContent>
+                            <TooltipContent side="right">{map.sourceA || map.title}{map.sourceB ? ` vs. ${map.sourceB}` : ''}</TooltipContent>
                           </Tooltip>
-                          <div className="text-[10px] text-slate-400 mt-1">{map.bridges?.length || 0} bridge{(map.bridges?.length || 0) !== 1 ? 's' : ''}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{map.bridges?.length || 0} bridge{(map.bridges?.length || 0) !== 1 ? 's' : ''}</div>
                         </div>
                       </button>
                     </SidebarMenuButton>
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover/item:opacity-100 transition-opacity text-slate-400 hover:text-red-500" onClick={(e) => { e.stopPropagation(); setDeleteTarget(map); }} title="Delete project">
+                      <Trash2 size={14} />
+                    </Button>
                   </SidebarMenuItem>
                 ))}
             </SidebarMenu>
@@ -166,6 +181,18 @@ export default function AppSidebar() {
       <SidebarFooter>
         <div className="flex items-center justify-between p-2"><UserButton afterSignOutUrl="/" /></div>
       </SidebarFooter>
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription>This will permanently delete "{deleteTarget?.title}". This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }

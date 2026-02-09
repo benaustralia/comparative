@@ -65,8 +65,8 @@ const AreaField = ({ control, name, placeholder, className }) => (
 );
 
 const SIDE_CFG = {
-  a: { label: 'Source A', color: 'text-blue-600', bar: 'bg-blue-200', meaning: 'h-8 text-xs font-medium text-blue-900 bg-blue-50 border-blue-100 placeholder:text-blue-300 font-serif', meaningPh: 'Meaning A (The Effect?)', ctxPh: 'Context (e.g. Chapter 1)', evPh: 'Evidence / Quote...' },
-  b: { label: 'Source B', color: 'text-orange-600', bar: 'bg-orange-200', meaning: 'h-8 text-xs font-medium text-orange-900 bg-orange-50 border-orange-100 placeholder:text-orange-300 font-serif', meaningPh: 'Meaning B (The Effect?)', ctxPh: 'Context (e.g. Scene 1)', evPh: 'Evidence / Visuals...' },
+  a: { label: 'Source A', color: 'text-blue-600', bar: 'bg-blue-200', meaning: 'h-8 text-xs font-medium text-blue-900 bg-blue-50 border-blue-100 placeholder:text-blue-400 font-serif', meaningPh: 'Meaning A (The Effect?)', ctxPh: 'Context (e.g. Chapter 1)', evPh: 'Evidence / Quote...' },
+  b: { label: 'Source B', color: 'text-orange-600', bar: 'bg-orange-200', meaning: 'h-8 text-xs font-medium text-orange-900 bg-orange-50 border-orange-100 placeholder:text-orange-400 font-serif', meaningPh: 'Meaning B (The Effect?)', ctxPh: 'Context (e.g. Scene 1)', evPh: 'Evidence / Visuals...' },
 };
 
 const SidePanel = ({ side, index, control, item }) => {
