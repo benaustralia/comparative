@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFirebaseAuth } from './FirebaseAuthConfig';
 import { getMap, updateMapSegments, updateMapDetails, deleteMap } from '@/lib/db-service';
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import StackEditor from './StackEditor';
 import FlowCanvas from './FlowCanvas';
@@ -112,8 +113,9 @@ export default function MapEditor({ mapId }) {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="px-6 py-3 border-b flex items-center justify-between bg-white">
+      <div className="px-4 py-3 border-b flex items-center justify-between bg-white">
         <div className="flex items-center gap-2 min-w-0">
+          <SidebarTrigger className="shrink-0" />
           <h2 className="text-lg font-bold text-slate-900 font-serif truncate">
             {hasAcademic ? (
               <>{mapData.sourceAAuthor}{'\u2019'}s <em>{mapData.sourceA}</em> ({mapData.sourceAYear})<span className="font-normal"> vs. </span>{mapData.sourceBAuthor}{'\u2019'}s <em>{mapData.sourceB}</em> ({mapData.sourceBYear})</>

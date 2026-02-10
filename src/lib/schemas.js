@@ -40,6 +40,7 @@ const segmentSchema = z.object({
   id: z.union([z.string(), z.number()]),
   kind: z.enum(["foundation", "cantilever", "keystone"]),
   status: z.enum(["draft", "final"]).default("draft"),
+  isActive: z.boolean().optional().default(true),
   content: z.string().optional(),
   teel: cantileverSchema.optional(),
   synthesis: z.string().optional(),

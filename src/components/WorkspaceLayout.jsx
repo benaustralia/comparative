@@ -23,18 +23,20 @@ export default function WorkspaceLayout() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-        </header>
         {mapId ? (
           <div className="flex-1 overflow-hidden"><MapEditor mapId={mapId} /></div>
         ) : (
-          <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400 text-center">
-            <div>
-              <p className="text-lg font-semibold">Select an essay</p>
-              <p className="text-sm mt-1">Choose an essay from the sidebar or create a new one</p>
+          <>
+            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+              <SidebarTrigger className="-ml-1" />
+            </header>
+            <div className="h-full flex items-center justify-center bg-slate-50 text-slate-400 text-center">
+              <div>
+                <p className="text-lg font-semibold">Select an essay</p>
+                <p className="text-sm mt-1">Choose an essay from the sidebar or create a new one</p>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </SidebarInset>
     </SidebarProvider>

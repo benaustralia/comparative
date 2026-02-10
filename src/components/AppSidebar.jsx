@@ -26,9 +26,10 @@ const Field = ({ control, name, children }) => (
 
 const SegmentDots = ({ segments }) => {
   if (!segments?.length) return null;
+  const visible = segments.filter(s => s.isActive !== false);
   return (
     <div className="flex gap-1 mt-1">
-      {segments.map(s => (
+      {visible.map(s => (
         <div key={s.id} className={`h-2 w-2 rounded-full ${s.status === 'final' ? 'bg-emerald-500' : 'bg-slate-300'}`} title={`${s.kind}: ${s.status}`} />
       ))}
     </div>
