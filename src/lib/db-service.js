@@ -150,3 +150,21 @@ export const generateExample = async ({ form, convention, feature, effect, lens,
   const result = await model.generateContent(prompt);
   return result.response.text();
 };
+
+export const generateVocabulary = async ({ form, convention, feature, effect, lens, essayQuestion }) => {
+  const model = await getGemini();
+  const prompt = `You are a VCE Literature vocabulary coach. Generate exactly 10 sophisticated vocabulary words that a Year 12 student should use when writing about: Form: ${form || 'prose'}. Convention: ${convention || 'general'}. Feature: ${feature || 'general technique'}. Effect: ${effect || 'audience engagement'}. Lens: ${lens || 'general'}. Essay question: "${essayQuestion || 'How do the texts explore this theme?'}". Return ONLY a JSON array of 10 single words, no explanation. Example: ["juxtaposition","subvert","foreground","embody","perpetuate","undermine","evoke","delineate","illuminate","encapsulate"]`;
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim();
+  try {
+    const match = text.match(/\[.*\]/s);
+    return match ? JSON.parse(match[0]) : [];
+  } catch { return []; }
+};
+
+export const suggestNextStep = async ({ form, convention, feature, effect, lens, essayQuestion, currentContent }) => {
+  const model = await getGemini();
+  const prompt = `You are a VCE Literature writing mentor. A Year 12 student is drafting an essay paragraph. Form: ${form || 'prose'}. Convention: ${convention || 'general'}. Feature: ${feature || 'general technique'}. Effect: ${effect || 'audience engagement'}. Lens: ${lens || 'general'}. Essay question: "${essayQuestion || 'How do the texts explore this theme?'}". Their current draft: "${currentContent || '(empty)'}". In 2-3 sentences, suggest the next concrete step they should take in their writing. Be specific and actionable. Do not write the paragraph for them.`;
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+};

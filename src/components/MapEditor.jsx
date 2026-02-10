@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Map, Share2, Trash2, Pencil, BookOpen } from 'lucide-react';
+import { Edit3, Map, Share2, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useFirebaseAuth } from './FirebaseAuthConfig';
@@ -27,6 +27,8 @@ export default function MapEditor({ mapId }) {
   const [editForm, setEditForm] = useState({});
   const [mentorResponse, setMentorResponse] = useState(null);
   const [exampleOverlay, setExampleOverlay] = useState(null);
+  const [vocabularyWords, setVocabularyWords] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const saveTimer = useRef(null);
 
   useEffect(() => {
@@ -65,25 +67,52 @@ export default function MapEditor({ mapId }) {
     saveSegments(updated);
   }, [segments, saveSegments]);
 
+  const getMetadata = useCallback(() => {
+    const cantilever = segments.find(s => s.kind === 'cantilever');
+    const side = cantilever?.teel?.sideA;
+    return {
+      form: side?.type || mapData?.sourceAForm,
+      convention: side?.convention,
+      feature: side?.feature,
+      effect: side?.effect,
+      lens: side?.lens,
+      essayQuestion: mapData?.essayQuestion,
+    };
+  }, [segments, mapData]);
+
   const handleMentor = useCallback(async (segData) => {
-    const side = segData.teel?.sideA;
+    const side = segData?.teel?.sideA;
     if (!side?.feature) { setMentorResponse('Fill in the Form and Feature fields first to get mentoring advice.'); return; }
+    setAiLoading(true);
     try {
       const { mentorMe } = await import('@/lib/db-service');
       const response = await mentorMe({ form: side.type, convention: side.convention, feature: side.feature, effect: side.effect, lens: side.lens, context: side.ctx });
       setMentorResponse(response);
     } catch { setMentorResponse('Mentor feature requires a Gemini API key. Set VITE_GEMINI_API_KEY in your .env file.'); }
+    finally { setAiLoading(false); }
   }, []);
 
   const handleExample = useCallback(async () => {
+    setAiLoading(true);
     try {
       const { generateExample } = await import('@/lib/db-service');
-      const cantilever = segments.find(s => s.kind === 'cantilever');
-      const side = cantilever?.teel?.sideA;
-      const response = await generateExample({ form: side?.type, convention: side?.convention, feature: side?.feature, effect: side?.effect, lens: side?.lens, essayQuestion: mapData?.essayQuestion });
+      const meta = getMetadata();
+      const response = await generateExample(meta);
       setExampleOverlay(response);
     } catch { setExampleOverlay('Example feature requires a Gemini API key. Set VITE_GEMINI_API_KEY in your .env file.'); }
-  }, [segments, mapData]);
+    finally { setAiLoading(false); }
+  }, [getMetadata]);
+
+  const handleVocabulary = useCallback(async () => {
+    setAiLoading(true);
+    try {
+      const { generateVocabulary } = await import('@/lib/db-service');
+      const meta = getMetadata();
+      const words = await generateVocabulary(meta);
+      setVocabularyWords(words);
+    } catch { setVocabularyWords(null); }
+    finally { setAiLoading(false); }
+  }, [getMetadata]);
 
   const openEdit = () => {
     const d = mapData;
@@ -130,14 +159,21 @@ export default function MapEditor({ mapId }) {
               <Button key={key} size="icon" variant="ghost" className={`h-8 w-8 ${mode === key ? 'bg-white shadow-sm' : 'text-slate-400'}`} onClick={() => setMode(key)}><Icon size={16} /></Button>
             ))}
           </div>
-          <Button variant="outline" size="sm" onClick={handleExample} title="View paragraph example"><BookOpen size={14} className="mr-1" /> Example</Button>
           <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}><Share2 className="mr-2 h-4 w-4" /> Share</Button>
         </div>
       </div>
       {mapData.essayQuestion && <div className="px-6 py-2 bg-purple-50 border-b border-purple-100 text-xs text-purple-700 italic font-serif">{mapData.essayQuestion}</div>}
       <div className="flex-1 overflow-hidden">
         {mode === 'stack'
-          ? <StackEditor segments={segments} onSegmentsChange={saveSegments} />
+          ? <StackEditor
+              segments={segments}
+              onSegmentsChange={saveSegments}
+              onExample={handleExample}
+              onMentor={handleMentor}
+              onVocabulary={handleVocabulary}
+              vocabularyWords={vocabularyWords}
+              aiLoading={aiLoading}
+            />
           : <FlowCanvas segments={segments} onSegmentDelete={handleSegmentDelete} onSegmentUpdate={handleSegmentUpdate} />}
       </div>
       <ShareModal open={shareOpen} onOpenChange={setShareOpen} mapId={mapId} mapData={mapData} />

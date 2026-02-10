@@ -1,29 +1,86 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ChevronDown, BookOpen, Sparkles, Languages, Network } from 'lucide-react';
 import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { segmentsFormSchema } from '@/lib/schemas';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
-const BODY_LABELS = ['One', 'Two', 'Three', 'Four'];
 
-const LabelBadge = ({ color, label }) => (
-  <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${color}`}>{label}</div>
-);
+function VocabularyRibbon({ words, content }) {
+  if (!words || words.length === 0) return null;
+  const contentLower = (content || '').toLowerCase();
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-3">
+      {words.map((word, i) => {
+        const used = contentLower.includes(word.toLowerCase());
+        return (
+          <Badge
+            key={i}
+            variant={used ? 'secondary' : 'outline'}
+            className={`text-xs transition-all ${used ? 'line-through opacity-60' : ''}`}
+          >
+            {word}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
 
 
-const AreaField = ({ control, name, placeholder, className, disabled }) => (
-  <FormField control={control} name={name} render={({ field }) => (
-    <FormItem><FormControl><Textarea className={className || "min-h-[50px] text-sm resize-none bg-slate-50 font-serif"} placeholder={placeholder} disabled={disabled} {...field} /></FormControl><FormMessage /></FormItem>
-  )} />
-);
+function ActionToolbar({ onExample, onMentor, onVocabulary, onBridge, isCantilever, loading }) {
+  return (
+    <TooltipProvider delayDuration={300}>
+      <div className="flex items-center gap-1 mt-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" onClick={onExample} disabled={loading}>
+              <BookOpen size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Example</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" onClick={onMentor} disabled={loading}>
+              <Sparkles size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Mentor</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" onClick={onVocabulary} disabled={loading}>
+              <Languages size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Vocabulary</TooltipContent>
+        </Tooltip>
+        {isCantilever && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700" onClick={onBridge}>
+                <Network size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Bridge Mode</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
+  );
+}
 
 
-function FoundationCard({ index, control, onFlushStatus }) {
+function FoundationCard({ index, control, onFlushStatus, vocabulary, onExample, onMentor, onVocabulary, loading }) {
   const [open, setOpen] = useState(true);
+  const content = useWatch({ control, name: `segments.${index}.content` });
   return (
     <div className={`rounded-xl overflow-hidden transition-all duration-300 ${open ? 'shadow-xl ring-1 ring-slate-900/5 bg-white' : 'shadow-sm bg-white border'}`}>
       <div className="w-full p-4 flex items-center justify-between bg-slate-800 border-b border-slate-700">
@@ -40,16 +97,28 @@ function FoundationCard({ index, control, onFlushStatus }) {
         )} />
       </div>
       {open && (
-        <div className="p-4 space-y-3">
-          <AreaField control={control} name={`segments.${index}.content`} placeholder="Write your introduction here. Introduce both texts, the essay question, and your contention..." className="min-h-[120px] text-sm resize-none bg-slate-50 font-serif" />
+        <div className="p-4">
+          <VocabularyRibbon words={vocabulary} content={content} />
+          <FormField control={control} name={`segments.${index}.content`} render={({ field }) => (
+            <FormItem><FormControl><Textarea className="min-h-[140px] text-sm resize-none bg-slate-50 font-serif" placeholder="Write your introduction here. Introduce both texts, the essay question, and your contention..." {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+          <ActionToolbar
+            onExample={onExample}
+            onMentor={onMentor}
+            onVocabulary={onVocabulary}
+            isCantilever={false}
+            loading={loading}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function KeystoneCard({ index, control, onFlushStatus }) {
+
+function KeystoneCard({ index, control, onFlushStatus, vocabulary, onExample, onMentor, onVocabulary, loading }) {
   const [open, setOpen] = useState(true);
+  const content = useWatch({ control, name: `segments.${index}.content` });
   return (
     <div className={`rounded-xl overflow-hidden transition-all duration-300 ${open ? 'shadow-xl ring-1 ring-slate-900/5 bg-white' : 'shadow-sm bg-white border'}`}>
       <div className="w-full p-4 flex items-center justify-between bg-slate-800 border-b border-slate-700">
@@ -66,23 +135,40 @@ function KeystoneCard({ index, control, onFlushStatus }) {
         )} />
       </div>
       {open && (
-        <div className="p-4 space-y-3">
-          <AreaField control={control} name={`segments.${index}.content`} placeholder="Write your conclusion here. Synthesise your arguments and restate your contention..." className="min-h-[120px] text-sm resize-none bg-slate-50 font-serif" />
+        <div className="p-4">
+          <VocabularyRibbon words={vocabulary} content={content} />
+          <FormField control={control} name={`segments.${index}.content`} render={({ field }) => (
+            <FormItem><FormControl><Textarea className="min-h-[140px] text-sm resize-none bg-slate-50 font-serif" placeholder="Write your conclusion here. Synthesise your arguments and restate your contention..." {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+          <ActionToolbar
+            onExample={onExample}
+            onMentor={onMentor}
+            onVocabulary={onVocabulary}
+            isCantilever={false}
+            loading={loading}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function CantileverCard({ index, control, bodyNumber, onFlushStatus, onToggleActive }) {
+
+const BODY_LABELS = ['One', 'Two', 'Three', 'Four'];
+
+function CantileverCard({ index, control, bodyNumber, onFlushStatus, onToggleActive, vocabulary, onExample, onMentor, onVocabulary, loading }) {
   const [open, setOpen] = useState(true);
   const item = useWatch({ control, name: `segments.${index}` });
-  if (!item?.teel) return null;
+  const content = item?.content || '';
 
   const label = BODY_LABELS[bodyNumber - 1] || bodyNumber;
   const isB4 = bodyNumber === 4;
-  const isActive = item.isActive !== false;
+  const isActive = item?.isActive !== false;
   const showBody = isB4 ? open && isActive : open;
+
+  const handleBridge = useCallback(() => {
+    console.log('Enter Bridge Mode');
+  }, []);
 
   return (
     <div className={`rounded-xl overflow-hidden transition-all duration-300 ${open ? 'shadow-xl ring-1 ring-slate-900/5 bg-white' : 'shadow-sm bg-white border'} ${isB4 && !isActive ? 'opacity-50' : ''}`}>
@@ -119,30 +205,27 @@ function CantileverCard({ index, control, bodyNumber, onFlushStatus, onToggleAct
         </div>
       </div>
       {showBody && (
-        <div className="p-4 space-y-4">
-          <div>
-            <LabelBadge color="text-slate-500" label="Topic Sentence" />
-            <AreaField control={control} name={`segments.${index}.teel.topic`} placeholder="Your topic sentence for this paragraph..." className="min-h-[50px] text-sm resize-none bg-slate-50 font-serif" disabled={isB4 && !isActive} />
-          </div>
-          <div>
-            <LabelBadge color="text-slate-500" label="Evidence Sentence" />
-            <AreaField control={control} name={`segments.${index}.teel.blocks.0.evidence`} placeholder="Your evidence for this paragraph..." className="min-h-[50px] text-sm resize-none bg-slate-50 font-serif" disabled={isB4 && !isActive} />
-          </div>
-          <div>
-            <LabelBadge color="text-slate-500" label="Explanation Sentence" />
-            <AreaField control={control} name={`segments.${index}.teel.blocks.0.explanation`} placeholder="Your explanation of the evidence..." className="min-h-[50px] text-sm resize-none bg-slate-50 font-serif" disabled={isB4 && !isActive} />
-          </div>
-          <div>
-            <LabelBadge color="text-slate-500" label="Link Sentence" />
-            <AreaField control={control} name={`segments.${index}.teel.link`} placeholder="Link back to the essay question or transition to the next paragraph..." className="min-h-[50px] text-sm resize-none bg-slate-50 font-serif" disabled={isB4 && !isActive} />
-          </div>
+        <div className="p-4">
+          <VocabularyRibbon words={vocabulary} content={content} />
+          <FormField control={control} name={`segments.${index}.content`} render={({ field }) => (
+            <FormItem><FormControl><Textarea className="min-h-[180px] text-sm resize-none bg-slate-50 font-serif" placeholder={`Draft your body paragraph here. Use TEEL structure: Topic sentence, Evidence (quote), Explanation of technique, Link back to question...`} disabled={isB4 && !isActive} {...field} /></FormControl><FormMessage /></FormItem>
+          )} />
+          <ActionToolbar
+            onExample={onExample}
+            onMentor={onMentor}
+            onVocabulary={onVocabulary}
+            onBridge={handleBridge}
+            isCantilever={true}
+            loading={loading}
+          />
         </div>
       )}
     </div>
   );
 }
 
-export default function StackEditor({ segments, onSegmentsChange }) {
+
+export default function StackEditor({ segments, onSegmentsChange, onExample, onMentor, onVocabulary, vocabularyWords, aiLoading }) {
   const form = useForm({ resolver: zodResolver(segmentsFormSchema), defaultValues: { segments: segments || [] } });
   const { control, reset, watch, getValues } = form;
   const { fields } = useFieldArray({ control, name: "segments" });
@@ -180,10 +263,41 @@ export default function StackEditor({ segments, onSegmentsChange }) {
             return fields.map((item, i) => {
               const seg = watchedSegments?.[i];
               if (!seg) return null;
-              if (seg.kind === 'foundation') return <FoundationCard key={item.id} index={i} control={control} onFlushStatus={flushStatus} />;
-              if (seg.kind === 'keystone') return <KeystoneCard key={item.id} index={i} control={control} onFlushStatus={flushStatus} />;
+              if (seg.kind === 'foundation') return (
+                <FoundationCard
+                  key={item.id} index={i} control={control}
+                  onFlushStatus={flushStatus}
+                  vocabulary={vocabularyWords}
+                  onExample={onExample}
+                  onMentor={() => onMentor?.(seg)}
+                  onVocabulary={onVocabulary}
+                  loading={aiLoading}
+                />
+              );
+              if (seg.kind === 'keystone') return (
+                <KeystoneCard
+                  key={item.id} index={i} control={control}
+                  onFlushStatus={flushStatus}
+                  vocabulary={vocabularyWords}
+                  onExample={onExample}
+                  onMentor={() => onMentor?.(seg)}
+                  onVocabulary={onVocabulary}
+                  loading={aiLoading}
+                />
+              );
               bodyNum++;
-              return <CantileverCard key={item.id} index={i} control={control} bodyNumber={bodyNum} onFlushStatus={flushStatus} onToggleActive={toggleActive} />;
+              return (
+                <CantileverCard
+                  key={item.id} index={i} control={control}
+                  bodyNumber={bodyNum}
+                  onFlushStatus={flushStatus} onToggleActive={toggleActive}
+                  vocabulary={vocabularyWords}
+                  onExample={onExample}
+                  onMentor={() => onMentor?.(seg)}
+                  onVocabulary={onVocabulary}
+                  loading={aiLoading}
+                />
+              );
             });
           })()}
         </div>
